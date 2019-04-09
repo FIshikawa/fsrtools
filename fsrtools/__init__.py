@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import fsrtools
-from viewtools import *
-from simulatetools import * 
+from .import simulate_tools
+from .import view_tools
 __version__ = '0.1.1'
-__all__ = ['ExperimentManager','PlotManager']
 
