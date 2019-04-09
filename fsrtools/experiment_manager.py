@@ -7,8 +7,8 @@ import json
 import copy
 import shutil
 import subprocess
-from paramset import set_simulate_params_iterate_dict
-from paramset import set_simulate_params
+from fsrtools.paramset import set_simulate_params_iterate_dict
+from fsrtools.paramset import set_simulate_params
 
 
 class ExperimentManager:
