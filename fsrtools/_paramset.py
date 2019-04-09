@@ -1,4 +1,5 @@
-from util import LogManager
+# todo : make more convenient and readable 
+from fsrtools._util import LogManager
 
 def product_combination_generator(iterate_dict):
     total_length = 1 
