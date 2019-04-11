@@ -14,7 +14,7 @@ The package has some console tools.
 You should add `.local/bin/` to PATH for the console tools.
 
 ## requirement
-python2.7
+python3.6
 
   
 
