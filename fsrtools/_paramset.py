@@ -41,7 +41,7 @@ def set_simulate_params_iterate_dict(simulate_params,execute_file,indent=0,log_f
                     iterate_dict[key].append(np.power(simulate_params[key+'_init'],float(i+1)))
                 logman.log_write('{}'.format(iterate_dict[key]))
 
-    if(execute_file.find('clXYmodel') > -1 or execute_file.find('clSpindemo') > -1):
+    if('clXYmodel' in execute_file or 'clSpindemo' in execute_file or 'fpu_thermalization' in execute_file):
         if('N_thermalize' in simulate_params.keys()):
             if(simulate_params['N_thermalize'] == 'Auto'):
                 logman.log_write('[detect : N_thermalize: Auto]')
@@ -123,7 +123,7 @@ def set_simulate_params(simulate_params,iterate_key_list,iterate_pair,execute_fi
     for i in range(len(iterate_key_list)):
         simulate_params[iterate_key_list[i]] = iterate_pair[i]
 
-        if(execute_file.find('clXYmodel') > -1 or execute_file.find('clSpindemo') > -1):
+        if('clXYmodel' in execute_file or 'clSpindemo' in execute_file or 'fpu_thermalization' in execute_file):
             if( iterate_key_list[i] in ['Ns']):
                 if(execute_file.find('Cube') > -1):
                     simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] 
