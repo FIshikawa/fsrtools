@@ -243,6 +243,33 @@ class ExperimentManager:
         operate_set = []
         info = True
 
+        if(execute_file.find('fpu_thermalization') > -1):
+            self.__log_write('[detect : {}]'.format(execute_file))
+            files_list = os.listdir(os.getcwd())
+            if(not execute_file in files_list):
+                self.__log_write('[Error ! : can not find execute_file!]')
+                info = False
+            else:
+                execute_file = './' + execute_file 
+                operate_set.append(execute_file) 
+                operate_set.append(result_dir)
+                operate_set.append(str(int(param_dict['Ns']))) 
+                operate_set.append(str(int(param_dict['N_time']))) 
+                operate_set.append(str(param_dict['t']))
+                operate_set.append(str(param_dict['alpha']))
+                operate_set.append(str(param_dict['beta']))
+                operate_set.append(str(param_dict['E_initial']))
+                operate_set.append(str(int(param_dict['N_normalmode']))) 
+                operate_set.append(str(int(param_dict['n_bin'])))
+                operate_set.append(str(int(param_dict['N_loop']))) 
+                operate_set.append(str(int(param_dict['N_parallel']))) 
+                operate_set.append(str(int(param_dict['N_time_resolve']))) 
+                log_file_name = self.__log_file_name
+                log_open = open(log_file_name,'a')
+                self.__log_write('[command line input]')
+                self.__log_write('{}'.format(operate_set))
+
+
         if(execute_file.find('clXYmodelNonEq') > -1):
             self.__log_write('[detect : {}]'.format(execute_file))
             files_list = os.listdir(os.getcwd())
@@ -270,7 +297,7 @@ class ExperimentManager:
                 log_open = open(log_file_name,'a')
                 self.__log_write('[command line input]')
                 self.__log_write('{}'.format(operate_set))
-  
+
         elif(execute_file.find('clSpindemo') > -1 ):
             self.__log_write('[detect : {}]'.format(execute_file))
             files_list = os.listdir(os.getcwd())
@@ -292,7 +319,7 @@ class ExperimentManager:
                 log_open = open(log_file_name,'a')
                 self.__log_write('[command line input]')
                 self.__log_write('{}'.format(operate_set))
-  
+
         elif(execute_file.find('clXYmodelCriticalMD') > -1 ):
             self.__log_write('[detect : {}]'.format(execute_file))
             files_list = os.listdir(os.getcwd())
@@ -305,12 +332,12 @@ class ExperimentManager:
                 operate_set.append(result_dir)
                 operate_set.append(str(int(param_dict['N_thermalize']))) 
                 operate_set.append(str(int(param_dict['Ns']))) 
-                operate_set.append(str(int(param_dict['N_time']))) 
-                operate_set.append(str(param_dict['t']))
                 operate_set.append(str(param_dict['T']))
                 operate_set.append(str(param_dict['d_T'])) 
                 operate_set.append(str(int(param_dict['N_T']))) 
                 operate_set.append(str(int(param_dict['N_loop']))) 
+                operate_set.append(str(int(param_dict['N_time']))) 
+                operate_set.append(str(param_dict['t']))
                 operate_set.append(str(int(param_dict['N_parallel']))) 
                 operate_set.append(str(int(param_dict['Ns_observe']))) 
                 operate_set.append(str(int(param_dict['n_bin']))) 
@@ -318,7 +345,7 @@ class ExperimentManager:
                 log_open = open(log_file_name,'a')
                 self.__log_write('[command line input]')
                 self.__log_write('{}'.format(operate_set))
-  
+
         elif(execute_file.find('clXYmodelCritical') > -1 ):
             self.__log_write('[detect : {}]'.format(execute_file))
             files_list = os.listdir(os.getcwd())
@@ -343,7 +370,7 @@ class ExperimentManager:
                 log_open = open(log_file_name,'a')
                 self.__log_write('[command line input]')
                 self.__log_write('{}'.format(operate_set))
-  
+
         elif(execute_file.find('clXYmodelWangLandau') > -1):
             self.__log_write('[detect : {}]'.format(execute_file))
             files_list = os.listdir(os.getcwd())
@@ -363,7 +390,7 @@ class ExperimentManager:
                 log_open = open(log_file_name,'a')
                 self.__log_write('[command line input]')
                 self.__log_write('{}'.format(operate_set))
-  
+
         elif(execute_file.find('clXYmodel') > -1):
           self.__log_write('[detect : {}]'.format(execute_file))
           files_list = os.listdir(os.getcwd())
@@ -388,7 +415,7 @@ class ExperimentManager:
             log_open = open(log_file_name,'a')
             self.__log_write('[command line input]')
             self.__log_write('{}'.format(operate_set))
-  
+
         elif(execute_file.find('MPO') > -1):
             self.__log_write('[detect : {}]'.format('MPO'))
             files_list = os.listdir(os.getcwd())
