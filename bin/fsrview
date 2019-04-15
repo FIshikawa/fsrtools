@@ -7,9 +7,9 @@ import glob
 import json
 import argparse
 from datetime import datetime
-from fsrtools import PlotManager
+from fsrtools.view_tools import PlotManager
 from IPython.terminal.embed import InteractiveShellEmbed
-from fsrtools.paramset import set_simulate_params_iterate_dict
+from fsrtools._paramset import set_simulate_params_iterate_dict
 
 def colors(color):
     colors_dict= {'BLACK'     : '\033[30m',
