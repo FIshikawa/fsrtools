@@ -16,7 +16,7 @@ def product_combination_generator(iterate_dict):
             key_list.append(key)
             for i in range(previous_length):
                 for j in range(int(total_length/previous_length)):
-                    total_combination[ j + i * total_length / previous_length].append(iterate_dict[key][int(j // (float(total_length / previous_length) / float(value)))])
+                    total_combination[ j + i * int(total_length / previous_length)].append(iterate_dict[key][int(j // (float(total_length / previous_length) / float(value)))])
             previous_length = value
 
     return key_list, total_combination
@@ -45,7 +45,7 @@ def set_simulate_params_iterate_dict(simulate_params,execute_file,indent=0,log_f
         if('N_thermalize' in simulate_params.keys()):
             if(simulate_params['N_thermalize'] == 'Auto'):
                 logman.log_write('[detect : N_thermalize: Auto]')
-                if(not isinstance(simulate_params['Ns'],basestring) and not isinstance(simulate_params['Ns'],list)): 
+                if(not isinstance(simulate_params['Ns'],str) and not isinstance(simulate_params['Ns'],list)): 
                     if(execute_file.find('Cube') > 0):
                         simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] 
                     elif(execute_file.find('Square') > 0):
@@ -55,13 +55,13 @@ def set_simulate_params_iterate_dict(simulate_params,execute_file,indent=0,log_f
                     else:
                         simulate_params['N_thermalize'] =  simulate_params['Ns'] 
                     logman.log_write('[N_thermalize : {}]'.format(simulate_params['N_thermalize']))
-                elif(isinstance(simulate_params['Ns'],basestring) and isinstance(simulate_params['Ns'],list)): 
+                elif(isinstance(simulate_params['Ns'],str) and isinstance(simulate_params['Ns'],list)): 
                     logman.log_write('[N_thermalize is set at simulation later]')
 
         if('Ns' in simulate_params.keys()):
             if(simulate_params['Ns'] == 'Auto'):
                 logman.log_write('[detect : N_thermalize: Auto]')
-                if(not isinstance(simulate_params['Ns'],basestring) and not isinstance(simulate_params['Ns'],list)): 
+                if(not isinstance(simulate_params['Ns'],str) and not isinstance(simulate_params['Ns'],list)): 
                     if(execute_file.find('Cube') > 0):
                         simulate_params['Ns'] =  np.power(simulate_params['num_particles'],1/3)  
                     elif(execute_file.find('Square') > 0):
@@ -71,17 +71,17 @@ def set_simulate_params_iterate_dict(simulate_params,execute_file,indent=0,log_f
                     else:
                         simulate_params['Ns'] =  simulate_params['num_particles']
                     logman.log_write('[Ns : {}]'.format(simulate_params['Ns']))
-                elif(isinstance(simulate_params['Ns'],basestring) and isinstance(simulate_params['Ns'],list)): 
+                elif(isinstance(simulate_params['Ns'],str) and isinstance(simulate_params['Ns'],list)): 
                     logman.log_write('[Ns is set at simulation later]')
 
         if('N_time' in simulate_params.keys()):
             if(simulate_params['N_time'] == 'Auto'):
                 logman.log_write('[detect : N_time : Auto]')
-                if(not isinstance(simulate_params['t'],basestring) and not isinstance(simulate_params['dt'],basestring)): 
+                if(not isinstance(simulate_params['t'],str) and not isinstance(simulate_params['dt'],str)): 
                     if(not isinstance(simulate_params['t'],list) and not isinstance(simulate_params['dt'],list)): 
                         simulate_params['N_time'] =  int(simulate_params['t'] / simulate_params['dt'])
                         logman.log_write('[N_time : {}]'.format(simulate_params['N_time']))
-            elif(isinstance(simulate_params['N_time'],basestring)):
+            elif(isinstance(simulate_params['N_time'],str)):
                 logman.log_write('[N_time is set at simulation later]')
 
 
@@ -89,30 +89,30 @@ def set_simulate_params_iterate_dict(simulate_params,execute_file,indent=0,log_f
         if('N_time' in simulate_params.keys()):
             if(simulate_params['N_time'] == 'Auto'):
                 logman.log_write('[detect : N_time : Auto]')
-                if(not isinstance(simulate_params['t'],basestring) and not isinstance(simulate_params['dt'],basestring)): 
+                if(not isinstance(simulate_params['t'],str) and not isinstance(simulate_params['dt'],str)): 
                     if(not isinstance(simulate_params['t'],list) and not isinstance(simulate_params['dt'],list)): 
                         simulate_params['N_time'] =  int(simulate_params['t'] / simulate_params['dt'])
                         logman.log_write('[N_time : {}]'.format(simulate_params['N_time']))
-            elif(isinstance(simulate_params['N_time'],basestring)):
+            elif(isinstance(simulate_params['N_time'],str)):
                 logman.log_write('[N_time is set at simulation later]')
 
         if('D' in simulate_params.keys()):
             if(simulate_params['D'] == 'Auto'):
                 logman.log_write('[detect : {} : Auto]'.format('D'))
-                if(not isinstance(simulate_params['N'],basestring)):
+                if(not isinstance(simulate_params['N'],str)):
                     simulate_params['D'] = simulate_params['N'] * 2
                     logman.log_write('[D : {1}]'.format(key, simulate_params['D']))
-                elif(isinstance(simulate_params['N'],basestring)):
+                elif(isinstance(simulate_params['N'],str)):
                     logman.log_write('[N will be set specially: set later]')
 
         if('tagged' in simulate_params.keys()):
             if(simulate_params['tagged'] == 'Auto'):
                 logman.log_write('[detect : {} : Auto]'.format('tagged'))
-                if(not isinstance(simulate_params['N'],basestring)):
+                if(not isinstance(simulate_params['N'],str)):
                     if(not isinstance(simulate_params['N'],list)): 
                      simulate_params['tagged'] = simulate_params['N'] // 2
                     logman.log_write('[tagged : {1}]'.format(key, simulate_params['tagged']))
-                elif(isinstance(simulate_params['N'],basestring)):
+                elif(isinstance(simulate_params['N'],str)):
                     logman.log_write('[N will be set specially: set later]')
 
     iterate_list, total_combination = product_combination_generator(iterate_dict)
