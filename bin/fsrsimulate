@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import sys
-from fsrtools import ExperimentManager
+from fsrtools.simulate_tools import ExperimentManager
 
 def main():
     import argparse
