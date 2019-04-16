@@ -99,7 +99,7 @@ class ExperimentManager:
             if('Same' in self.__json_data['experiments'][key]['simulate_params'].keys()):
                 if(len(previous_key) < 1):
                     print('[Error ! : previous simulation does not exist !]')
-                key_list_temp = self.__json_data['experiments'][key]['simulate_params'].keys()
+                key_list_temp = list(self.__json_data['experiments'][key]['simulate_params'].keys())
                 key_list_temp.remove('Same')
                 value_dict_temp = {}
                 for key_temp in key_list_temp:
