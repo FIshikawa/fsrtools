@@ -173,7 +173,7 @@ class PlotManager:
         if(directory != None):
             if(isinstance(directory, int)): 
                 directory_name = self.__data_dir_list[directory-1]
-            elif(isinstance(directory, basestring)): 
+            elif(isinstance(directory, str)): 
                 directory_name = directory
         else:
             if(len(self.__data_dir_list) != 1):
@@ -184,17 +184,17 @@ class PlotManager:
         return directory_name
 
 
-    def __file_name_set(self,file,directory):
-        file_name = ''
+    def __file_path_set(self,file,directory):
+        file_path = ''
         if('/' in file):
             directory_name = os.path.dirname(file)
         else:
             directory_name = self.__directory_name_set(file,directory)
-            file_name = os.path.join(directory_name, file)
+            file_path = os.path.join(directory_name, file)
             self.__myprint('[directory set : {}]'.format(directory_name))
             file_in_dir_name = directory_name
-        self.__myprint('[full path of target : {}]'.format(file_name))
-        return file_name 
+        self.__myprint('[full path of target : {}]'.format(file_path))
+        return file_path 
 
 
     def __check_json_file(self,directory_name):
@@ -217,18 +217,18 @@ class PlotManager:
             return json_data
 
 
-    def __data_load(self,file_name,plot_kind):
+    def __data_load(self,file_path,plot_kind):
         type_dict = {}
-        if(not file_name in self.__buffer_data.keys()):
+        if(not file_path in self.__buffer_data.keys()):
             data = {}
             if(plot_kind == None):
                 self.__myprint('[plot_kind is not input : automatically set]')
                 for key in self.__plot_kind:
-                    if(key in file_name):
+                    if(key in file_path):
                         plot_kind = key
                         self.__myprint('[set plot_kind {} : {} in the result file name]'.format(plot_kind,plot_kind))
                 if(plot_kind == None):
-                    if('_' in file_name.split('/')[-1]):
+                    if('_' in os.path.basename(file_path)):
                         self.__myprint('[detect "_" but cannot find particular case.]')
                     self.__myprint('[normal plot data]')
                     plot_kind = 'normal'
@@ -246,8 +246,8 @@ class PlotManager:
                              'Rest_list' : [],
                              'Exact_list' : [],
                              'x_axis' : ''}
-                data_t = np.loadtxt(file_name, dtype = np.float64,skiprows=1)
-                f = open(file_name,'r')
+                data_t = np.loadtxt(file_path, dtype = np.float64,skiprows=1)
+                f = open(file_path,'r')
                 value_keys = f.readline()
                 value_keys = value_keys.strip()
                 value_keys = value_keys.split(' ')
@@ -274,8 +274,8 @@ class PlotManager:
                             type_dict['Rest_list'].append(key)
 
             elif(plot_kind in ['hist','correlation']):
-                data_t = np.loadtxt(file_name, dtype = np.float64,skiprows=2)
-                f = open(file_name,'r')
+                data_t = np.loadtxt(file_path, dtype = np.float64,skiprows=2)
+                f = open(file_path,'r')
                 x_data = f.readline()
                 x_data = x_data.strip()
                 x_data = x_data.split(' ')
@@ -311,7 +311,7 @@ class PlotManager:
                         data[key]['hist'] = data_t[:,[x for x in range(len(value_keys)) if 'hist' in value_keys[x] and key in value_keys[x]]]
 
                 elif(plot_kind == 'correlation'):
-                    data_t = np.loadtxt(file_name, dtype = np.float64,skiprows=2)
+                    data_t = np.loadtxt(file_path, dtype = np.float64,skiprows=2)
                     type_dict = { 'y_axis' : '',
                                   'x_axis' : '',
                                   'values' : [],
@@ -333,8 +333,8 @@ class PlotManager:
             elif(plot_kind == 'totally'):
                 type_dict = {'y_list' : [],
                              'x_axis' : ''}
-                data_t = np.loadtxt(file_name, dtype = np.float64,skiprows=1)
-                f = open(file_name,'r')
+                data_t = np.loadtxt(file_path, dtype = np.float64,skiprows=1)
+                f = open(file_path,'r')
                 value_keys = f.readline()
                 value_keys = value_keys.strip()
                 value_keys = value_keys.split(' ')
@@ -345,16 +345,16 @@ class PlotManager:
                     data[key] = data_t[:,value_keys.index(key)]
                     type_dict['y_list'].append(key)
 
-            self.__buffer_data[file_name] = {}
-            self.__buffer_data[file_name]['data']      = copy.deepcopy(data)
-            self.__buffer_data[file_name]['type_dict'] = copy.deepcopy(type_dict)
-            self.__buffer_data[file_name]['plot_kind'] = copy.deepcopy(plot_kind)
+            self.__buffer_data[file_path] = {}
+            self.__buffer_data[file_path]['data']      = copy.deepcopy(data)
+            self.__buffer_data[file_path]['type_dict'] = copy.deepcopy(type_dict)
+            self.__buffer_data[file_path]['plot_kind'] = copy.deepcopy(plot_kind)
 
         else:
             self.__myprint('[data is already bufferd]')
-            data      = copy.deepcopy(self.__buffer_data[file_name]['data'])
-            type_dict = copy.deepcopy(self.__buffer_data[file_name]['type_dict'])
-            plot_kind = copy.deepcopy(self.__buffer_data[file_name]['plot_kind'])
+            data      = copy.deepcopy(self.__buffer_data[file_path]['data'])
+            type_dict = copy.deepcopy(self.__buffer_data[file_path]['type_dict'])
+            plot_kind = copy.deepcopy(self.__buffer_data[file_path]['plot_kind'])
 
         return data, type_dict, plot_kind
 
@@ -543,6 +543,9 @@ class PlotManager:
 
     def plot_result(self,file=None,directory=None,plot_kind=None,plot_value=None,save_fig=False,log_scale=False):
         self.__init_indent()
+        if(file is None and directory is None):
+            self.__myprint('[error!! cannot decide plot files : select number dir or result file]')
+            raise ValueError
         directory_name = ''
         directory_name = self.__directory_name_set(file,directory)
         if(len(directory_name) < 1):
@@ -556,14 +559,11 @@ class PlotManager:
         if(file != None):
             self.__myprint('[file plot mode]')
             self.__myprint('[file name : {}]'.format(file))
-            file_name = ''
-            file_name = self.__file_name_set(file,directory)
-            if(not os.path.exists(file_name)):
+            file_path = ''
+            file_path = self.__file_path_set(file,directory)
+            if(not os.path.exists(file_path)):
                 self.__myprint('[Error! : {} does not exist]'.format(file)) 
                 sys.exit()
-
-        else:
-            self.__myprint('[error!! cannot decide plot files : select number dir or result file]')
 
         if(len(directory_name) < 1):
             self.__myprint('[instant plot mode : no parameter.json]')
@@ -574,11 +574,9 @@ class PlotManager:
             self.__myprint(files_in_dir)
             json_data = self.__check_json_file(directory_name)
             waste_files = []
-            for key in files_in_dir:
-                if('result' in key):
-                    waste_files.append(key)
-            for key in waste_files:
-                files_in_dir.remove(key)
+            for key in files_in_dir[:]:
+                if(not 'result' in key):
+                    files_in_dir.remove(key)
             self.__myprint('[start ploting]')
 
         if(directory != None and file == None):
@@ -588,9 +586,9 @@ class PlotManager:
             self.__decrease_indent()
             self.__add_indent()
             for key in files_in_dir:
-                self.__plot_file(directory_name + key,directory,json_data,plot_kind=plot_kind,plot_value=plot_value,log_scale=log_scale)
+                self.__plot_file(os.path.join(directory_name,key),directory,json_data,plot_kind=plot_kind,plot_value=plot_value,log_scale=log_scale)
                 if(save_fig):
-                    fig_name = directory_name + key.split('.')[0] + '.pdf'
+                    fig_name = os.path.join(directory_name, key.split('.')[0] + '.pdf')
                     self.__myprint('[save figure : {}]'.format(fig_name))
                     plt.savefig(fig_name,format='pdf')
 
@@ -599,10 +597,10 @@ class PlotManager:
             if(json_data is None and plot_kind is None):
                 plot_kind = 'totally' 
                 self.__myprint('[no input plot_kind : plot_kind set as "totally" automatically]')
-            self.__plot_file(file_name,directory,json_data,plot_kind=plot_kind,plot_value=plot_value,log_scale=log_scale)  
+            self.__plot_file(file_path,directory,json_data,plot_kind=plot_kind,plot_value=plot_value,log_scale=log_scale)  
             if(save_fig):
-                fig_name = file_name.split('/')[-1]
-                fig_name = directory_name + fig_name.split('.')[0] + '.pdf'
+                fig_name = os.path.basename(file_path)
+                fig_name = os.path.join(directory_name,fig_name.split('.')[0] + '.pdf')
                 self.__myprint('[save figure : {}]'.format(fig_name))
                 plt.savefig(fig_name,format='pdf')
 
@@ -610,7 +608,7 @@ class PlotManager:
         self.__decrease_indent()
         self.__myprint('[plot completed]')
 
-    def __plot_file(self,file_name,directory,params_dict=None,legend_str=None,plot_kind=None,plot_value=None,log_scale=False):
+    def __plot_file(self,file_path,directory,params_dict=None,legend_str=None,plot_kind=None,plot_value=None,log_scale=False):
         plt.rcParams["font.size"] = self.basic_size['font']
         if(params_dict != None):
             if('T' in params_dict.keys()):
@@ -622,7 +620,7 @@ class PlotManager:
             if('N_time_resolve' in params_dict.keys()):
                 N_time_resolve = params_dict['N_time_resolve']
 
-        data, type_dict, plot_kind = self.__data_load(file_name,plot_kind)
+        data, type_dict, plot_kind = self.__data_load(file_path,plot_kind)
 
         self.__add_indent()
         for key in type_dict.keys():
@@ -720,9 +718,10 @@ class PlotManager:
                     self.__plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],label=label_t,color=cm.rainbow(float(counter)/len(type_dict['y_list'])),log_scale=log_scale)
                 self.ax[plot_kind][value_name].set_xlabel(type_dict['x_axis'],fontsize=self.basic_size['font']*1.5)
                 self.ax[plot_kind][value_name].grid(which='both',color='black',linestyle='--')
-                if('_' in file_name.split('/')[-1]):
+                if('_' in os.path.basename(file_path)):
                     self.__myprint('[file name has "_" : y-axis named by it]') 
-                    self.ax[plot_kind][value_name].set_ylabel(file_name.split('/')[-1].split('_')[-1].split('.')[0],fontsize=self.basic_size['font']*1.5)
+                    file_name = os.path.basename(file_path)
+                    self.ax[plot_kind][value_name].set_ylabel(file_name.split('_')[-1].split('.')[0],fontsize=self.basic_size['font']*1.5)
                 else:
                     self.ax[plot_kind][value_name].set_ylabel(value_name,fontsize=self.basic_size['font']*1.5)
                 self.ax[plot_kind][value_name].legend(bbox_to_anchor=(1.1, 1),loc="upper right",fontsize=self.basic_size['font'])
@@ -817,7 +816,7 @@ class PlotManager:
         if(plot_value != None):
             self.fig[plot_kind].suptitle('{} '.format(plot_value), fontsize=self.basic_size['font'])
         else:
-            self.fig[plot_kind].suptitle('File : {} '.format(file_name), fontsize=self.basic_size['font'])
+            self.fig[plot_kind].suptitle('File : {} '.format(file_path), fontsize=self.basic_size['font'])
 
     def info(self):
         print('[infomation]')
@@ -914,14 +913,12 @@ class PlotManager:
 
 
     def show(self,with_plot=False):
-        for key  in self.ax.keys():
-            for key_t in self.ax[key].keys():
-                del self.ax[key][key_t]
         if(with_plot):
             print('can close by plt_manager.close(fig_target=fig_name)')
             plt.pause(.01)
         else:
             plt.show()
+            self.ax = {}
 
 
     def close(self,fig_target=None):
@@ -933,18 +930,18 @@ class PlotManager:
 
     def dissect_result(self,file=None, directory=None):
         plot_kind = None
-        file_name = ''
+        file_path = ''
         directory_name = ''
         directory_name = self.__directory_name_set(file,directory)
         if(file != None):
             self.__myprint('[file name : {}]'.format(file))
-            file_name = ''
-            file_name = self.__file_name_set(file,directory)
+            file_path = ''
+            file_path = self.__file_path_set(file,directory)
         else:
             self.__myprint('[Error!! : input file name]')
             sys.exit()
         self.__check_json_file(directory_name)
-        data, type_dict, plot_kind = self.__data_load(file_name,plot_kind)
+        data, type_dict, plot_kind = self.__data_load(file_path,plot_kind)
         self.__myprint('[check data type list]')
         self.__add_indent()
         for key in type_dict.keys():
@@ -958,17 +955,17 @@ class PlotManager:
 
     def data_load(self,file=None, directory=None):
         plot_kind = None
-        file_name = ''
+        file_path = ''
         directory_name = ''
         directory_name = self.__directory_name_set(file,directory)
         if(file != None):
             self.__myprint('[file name : {}]'.format(file))
-            file_name = ''
-            file_name = self.__file_name_set(file,directory)
+            file_path = ''
+            file_path = self.__file_path_set(file,directory)
         else:
             self.__myprint('[Error!! : input file name]')
             sys.exit()
-        data, type_dict, plot_kind = self.__data_load(file_name,plot_kind)
+        data, type_dict, plot_kind = self.__data_load(file_path,plot_kind)
         self.__myprint('[return values : type_dict, data : type_dict has value names and data is dict type array]')
         self.__myprint('[check data type list]')
         self.__add_indent()
@@ -976,7 +973,7 @@ class PlotManager:
             self.__myprint('[{0}] : {1}'.format(key,type_dict[key]))
         self.__decrease_indent()
         self.__myprint('[return data]')
-        return copy.deepcopy(self.__buffer_data[file_name]['data'])
+        return copy.deepcopy(self.__buffer_data[file_path]['data'])
 
     def __progress_bar(self,loop,loop_max,add_sentence=None,indent=0):
         sys.stdout.write('\r')
@@ -1200,13 +1197,13 @@ class PlotManager:
         if(marker is None):
             marker = ''
         if(y_error is None):
-            if(isinstance(label,basestring)):
+            if(isinstance(label,str)):
                 ax.plot(x,y,label=label,color=color,marker=marker)
             else:
                 ax.plot(x,y,color=color,marker=marker)
         else:
             marker = 'x'
-            if(isinstance(label,basestring)):
+            if(isinstance(label,str)):
                 ax.errorbar(x,y,yerr=y_error,label=label,color=color,marker=marker)
             else:
                 ax.errorbar(x,y,yerr=y_error,color=color,marker=marker)
