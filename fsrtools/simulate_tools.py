@@ -270,7 +270,7 @@ class ExperimentManager:
                 self.__log_write('{}'.format(operate_set))
 
 
-        if(execute_file.find('clXYmodelNonEq') > -1):
+        elif(execute_file.find('clXYmodelNonEq') > -1):
             self.__log_write('[detect : {}]'.format(execute_file))
             files_list = os.listdir(os.getcwd())
             if(not execute_file in files_list):
