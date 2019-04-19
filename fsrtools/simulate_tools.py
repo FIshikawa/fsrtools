@@ -1,480 +1,390 @@
-import numpy as np
-import math
-import datetime
-import sys
 import os
 import json
 import copy
 import shutil
 import subprocess
+from fsrtools.util import StopWatch
+from fsrtools.util import SetDirectory
+from fsrtools.util import LogManager
 from fsrtools._paramset import set_simulate_params_iterate_dict
 from fsrtools._paramset import set_simulate_params
 
+def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test_mode=False):
+    current_directory = os.getcwd()
 
-class ExperimentManager:
-    def __init__(self, parameter_file=None, log_file=None, cout=False, test_mode=False):
-        if(test_mode):
-            self.__log_file_name = 'log_test.dat'
-            self.__parameter_file = 'parameter_test.json'
-        else:
-            self.__log_file_name = log_file
-            self.__parameter_file = parameter_file
-        current_dir = os.getcwd()
-        self.__log_file_name = os.path.join(current_dir, self.__log_file_name)
-        if(test_mode):
-            self.__cout = True
-        else:
-            self.__cout = cout  
-        self.__experiment_tag = ''
-        self.__top_directory = ''
-        self.__nest_number = 0
-        self.__test_mode = test_mode
-        json_file = open(self.__parameter_file,'r')
-        self.__json_data = json.load(json_file)
-  
-        if(os.path.exists(self.__log_file_name)):
-            os.remove(self.__log_file_name) 
-  
-        start_time =  datetime.datetime.now() 
-        self.__log_write('[start time : {}]'.format(start_time.strftime('%Y/%m/%d %H:%M:%S')))
-        if(test_mode):
-            self.__log_write('[test mode]')
-        self.__log_write('[set log file at : {}]'.format(self.__log_file_name))
-  
-        server_name = '%s' % os.uname()[1]
-        self.__log_write('[server name : {}]'.format(server_name))
-        if(self.__parameter_file == None):
-            self.__log_write('Error! : not select json files')
-            sys.exit()
-        else:
-            self.__log_write('[parameter file : {}]'.format(self.__parameter_file))  
-        if(self.__test_mode):
-            if(self.__json_data['experiment_dir'] != 'test/'): 
-                self.__log_write('[experiment_dir is not "test/" : dir should be it]')
-                self.__json_data['experiment_dir'] = 'test/'
-  
-        current_dir = os.getcwd()
-        current_dir_name = os.path.dirname(current_dir)
-        if(self.__test_mode):
-            self.__log_write('[current_dir list : {}]'.format(current_dir_name))
-        if(current_dir_name != 'build'):
-            dir_list = os.listdir(current_dir) 
-            if('build' in dir_list):
-                os.chdir('./build')
-                self.__log_write('[move to build directory]')
-            else:
-                self.__log_write('[not find build dir]')
-  
-        self.__log_write('[paramter data info]')
-        self.__log_write('[result dir : {}]'.format(self.__json_data['experiment_dir']))
-        self.__set_directory(self.__json_data['experiment_dir'])
-        self.__log_write('[number of experiment : {}]'.format(len(self.__json_data['experiments'].keys())))
-        for key in self.__json_data['experiments'].keys():
-            self.__log_write(' [{0} : number of simulate params: {1}]'.format(key, len(self.__json_data['experiments'][key]['simulate_params'].keys())))
-  
-        if(self.__test_mode):
-            for key in self.__json_data['experiments'].keys():
-                self.__log_write('[{0}]'.format(key))
-                for key_t in self.__json_data['experiments'][key].keys():
-                    self.__log_write(' [{0}]'.format(key_t))
-                    for key_tt in self.__json_data['experiments'][key][key_t].keys():
-                        self.__log_write('   {0} : {1}'.format(key_tt, self.__json_data['experiments'][key][key_t][key_tt]))
+    if(test_mode):
+        log_file = 'log_test.dat'
+        parameter_file = 'parameter_test.json'
+        cout_tag = True
+
+    log_file = os.path.join(current_directory, log_file)
+    log_write = LogManager(log_file=log_file,cout_tag=cout_tag)
+    setting_manager = SettingManager(log_write) 
+    stop_watch = StopWatch()
+
+    log_write('[start time : {}]'.format(stop_watch.start()))
+    if(test_mode):
+        log_write('[test mode]')
+    log_write('[server name : {}]'.format('%s' % os.uname()[1]))
+    log_write('[set log file at : {}]'.format(log_write.log_file))
+
+    if(parameter_file is None):
+        raise ValueError('parameter file must be set')
+    log_write('[parameter file : {}]'.format(parameter_file))  
+    json_file = open(parameter_file,'r')
+    json_data = json.load(json_file)
+
+    if(test_mode):
+        if(json_data['experiment_dir'] != 'test/'): 
+            log_write('[experiment_dir is not "test/" : force setting]')
+            json_data['experiment_dir'] = 'test/'
+
+    log_write('[paramter data info]')
+    log_write('[result dir : {}]'.format(json_data['experiment_dir']))
+    setting_manager.set_directory(json_data['experiment_dir'])
+    log_write('[number of experiment : {}]'.format(len(json_data['experiments'].keys())))
+    for key in json_data['experiments'].keys():
+        log_write(' [{0} : number of simulate params: {1}]'.format(key, len(json_data['experiments'][key]['simulate_params'].keys())))
+
+    if(test_mode):
+        for key in json_data['experiments'].keys():
+            log_write('[{0}]'.format(key))
+            for key_t in json_data['experiments'][key].keys():
+                log_write(' [{0}]'.format(key_t))
+                for key_tt in json_data['experiments'][key][key_t].keys():
+                    log_write('   {0} : {1}'.format(key_tt, json_data['experiments'][key][key_t][key_tt]))
+
+    experiment_directory = os.path.join(json_data['experiment_dir'], stop_watch.start_time.strftime('%Y-%m-%d-%H-%M-%S') + '/')
+    log_write('[set result output directory : {}]'.format(experiment_directory))
+    setting_manager.set_directory(experiment_directory)
+
+    json_data['time_info'] = {}
+    json_data['time_info']['start_time'] = start_time.strftime('%Y/%m/%d %H:%M:%S')
+    parameter_file_for_record = os.path.join(experiment_directory,'parameter.json')
+    setting_manager.json_set(json_data, parameter_file_for_record)
+
+    previous_key = ''
+    experiment_tag = ''
+    for key in json_data['experiments'].keys():
+        log_write('[{0}][start experiment : {1}]'.format(key,stop_watch.lap_start()))
+        log_write.add_indent()
+        experiment_tag = key
+
+        if('Same' in json_data['experiments'][key]['simulate_params'].keys()):
+            if(len(previous_key) < 1):
+                print('[Error ! : previous simulation does not exist !]')
+                continue 
+            key_list_temp = list(json_data['experiments'][key]['simulate_params'].keys())
+            key_list_temp.remove('Same')
+            value_dict_temp = {}
+            for key_temp in key_list_temp:
+                value_dict_temp[key_temp] = json_data['experiments'][key]['simulate_params'][key_temp]
+            json_data['experiments'][key]['simulate_params'] = copy.deepcopy(json_data['experiments'][previous_key]['simulate_params'])
+            for key_temp in key_list_temp:
+                json_data['experiments'][key]['simulate_params'][key_temp] = value_dict_temp[key_temp] 
+
+        json_data['experiments'][key]['experiment_params']['experiment_dir'] = experiment_directory
+        operate_simulations(json_data['experiments'][key],experiment_tag,log_write)
+        log_write.decrease_indent()
+        log_write('[{0}][end experiment : {1} : lap time : {2}]'.format(key,stop_watch.lap_end(),stop_watch.lap_time()))
+        previous_key = key
+
+    log_write('[finish time : {}]'.format(stop_watch.end()))
+    log_write('[duration : {}]'.format(stop_watch.duration()))
+    json_data['time_info']['finish_time'] = stop_watch.end_time.strftime('%Y/%m/%d %H:%M:%S')
+    json_data['time_info']['duration'] = stop_watch.duration.strftime('%d:%H:%M:%S')
+    setting_manager.json_set(json_data, parameter_file_for_record)
+    shutil.copy(log_file,os.path.join(experiment_directory,'log.dat'))
 
 
-    def operate_experiments(self):
-        start_time =  datetime.datetime.now() 
-        result_dir_name = self.__json_data['experiment_dir'] + start_time.strftime('%Y-%m-%d-%H-%M-%S') + '/'
-        self.__log_write('[set result output directory : {}]'.format(result_dir_name))
-        self.__set_directory(result_dir_name)
-        self.__set_top_directory(result_dir_name)
-        self.__json_data['time_info'] = {}
-        self.__json_data['time_info']['start_time'] = start_time.strftime('%Y/%m/%d %H:%M:%S')
-        self.__json_set(self.__json_data, result_dir_name + 'parameter.json')
-        previous_key = ''
-        for key in self.__json_data['experiments'].keys():
-            start_time =  datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-            self.__log_write('[{0}][start experiment : {1}]'.format(key,start_time))
-            self.__add_indent()
-            self.__set_experiment_tag(key)
-            if('Same' in self.__json_data['experiments'][key]['simulate_params'].keys()):
-                if(len(previous_key) < 1):
-                    print('[Error ! : previous simulation does not exist !]')
-                key_list_temp = list(self.__json_data['experiments'][key]['simulate_params'].keys())
-                key_list_temp.remove('Same')
-                value_dict_temp = {}
-                for key_temp in key_list_temp:
-                    value_dict_temp[key_temp] = self.__json_data['experiments'][key]['simulate_params'][key_temp]
-                self.__json_data['experiments'][key]['simulate_params'] = copy.deepcopy(self.__json_data['experiments'][previous_key]['simulate_params'])
-                for key_temp in key_list_temp:
-                    self.__json_data['experiments'][key]['simulate_params'][key_temp] = value_dict_temp[key_temp] 
-            self.__json_data['experiments'][key]['experiment_params']['experiment_dir'] = result_dir_name
-            self.__execute_experiment(self.__json_data['experiments'][key])
-            end_time =  datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-            self.__decrease_indent()
-            self.__log_write('[{0}][end experiment : {1}]'.format(key,end_time))
-            previous_key = key
-  
-        self.__init_experiment_tag()
-        finish_time =  datetime.datetime.now() 
-        self.__json_data['time_info']['finish_time'] = finish_time.strftime('%Y/%m/%d %H:%M:%S')
-        self.__json_set(self.__json_data, result_dir_name + 'parameter.json')
-        self.__log_write('[finish time : {}]'.format(finish_time.strftime('%Y/%m/%d %H:%M:%S')))
-        self.__end_log_copy()
+def operate_simulations(param_dict_original,experiment_tag,log_write):
+    stop_watch = StopWatch()
+    setting_manager = SettingManager(log_write) 
 
-    def __execute_experiment(self,param_dict_original):
-        # execute experiment according to operate parameter
-        param_dict = copy.deepcopy(param_dict_original)
-        param_dict_original['experiment_params']['experiment_tag'] = self.experiment_tag 
-        experiment_params = param_dict['experiment_params']
-        simulate_params = param_dict['simulate_params']
+    param_dict = copy.deepcopy(param_dict_original)
+    param_dict_original['experiment_params']['experiment_tag'] = experiment_tag 
+    experiment_params = param_dict['experiment_params']
+    simulate_params = param_dict['simulate_params']
+
+    experiment_directory = experiment_params['experiment_dir']
+    log_write('[check experiment directory : {}]'.format(experiment_directory))
+    set_directory(experiment_directory)
+
+    simulate_directory = os.path.join(experiment_directory,experiment_tag + '/') 
+    log_write('[simulate directory : {}]'.format(simulate_directory))
+    set_directory(simulate_directory)
+    experiment_params['experiment_dir'] = simulate_directory
     
-        experiment_dir_name = experiment_params['experiment_dir']
-        self.__log_write('[check experiment directory : {}]'.format(experiment_dir_name))
-        self.__set_directory(experiment_dir_name)
-  
-        simulate_dir_name = experiment_dir_name + self.experiment_tag + '/' 
-        self.__log_write('[simulate directory : {}]'.format(simulate_dir_name))
-        self.__set_directory(simulate_dir_name)
-        experiment_params['experiment_dir'] = simulate_dir_name
-        
-        param_dict_original['time_info'] = {}
-        param_dict_original['time_info']['start_time'] = datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-        json_log_file_name = simulate_dir_name + 'parameter.json'
-        self.__json_set(param_dict_original,json_log_file_name)
-  
-        execute_file = experiment_params['execute_file']
-  
-        simulate_params, iterate_dict , iterate_key_list, iterate_pair = set_simulate_params_iterate_dict(simulate_params,\
-                                                                                                          execute_file,\
-                                                                                                          indent=self.__nest_number,\
-                                                                                                          log_file=self.__log_file_name)
-  
-        simulate_number = 1
-        if(len(iterate_dict.keys()) != 0):
-            self.__log_write('[check iterate lists]')
-            self.__log_write('[iterate_key_list] : {}'.format(iterate_key_list))
-            self.__log_write('[iterate_pair length : {}]'.format(len(iterate_pair)))
-            self.__log_write('[total number of simulations : {}]'.format(len(iterate_pair)))
-  
-            for i in range(len(iterate_pair)):
-                simulate_params = set_simulate_params(simulate_params,iterate_key_list, iterate_pair[i], execute_file)
-                self.__log_write('[simulation : number-{}]'.format(simulate_number))
-                self.__add_indent()
-                simulate_number = self.__operate_simulation(execute_file,simulate_params,simulate_number,simulate_dir_name)
-                self.__decrease_indent()
+    param_dict_original['time_info'] = {}
+    param_dict_original['time_info']['start_time'] = stop_watch.start()
+    parameter_file_simulation = os.path.join(simulate_directory,'parameter.json')
+    json_set(param_dict_original,parameter_file_simulation)
+
+    execute_file = experiment_params['execute_file']
+
+    simulate_params, iterate_dict , iterate_key_list, iterate_pair = set_simulate_params_iterate_dict(simulate_params,\
+                                                                                                      execute_file,\
+                                                                                                      indent=nest_number,\
+                                                                                                      log_file=log_file)
+
+    simulate_number = 1
+    if(len(iterate_dict.keys()) != 0):
+        log_write('[check iterate lists]')
+        log_write('[iterate_key_list] : {}'.format(iterate_key_list))
+        log_write('[iterate_pair length : {}]'.format(len(iterate_pair)))
+        log_write('[total number of simulations : {}]'.format(len(iterate_pair)))
+
+        for i in range(len(iterate_pair)):
+            simulate_params = set_simulate_params(simulate_params,iterate_key_list, iterate_pair[i], execute_file)
+            log_write('[simulation : number-{}]'.format(simulate_number))
+            log_write.add_indent()
+            simulate_number = execute_simulation(execute_file,simulate_params,simulate_number,simulate_directory,log_write)
+            log_write.decrease_indent()
+    else:
+        log_write('[total number of simulations : 1]')
+        log_write('[simulation : number-{}]'.format(simulate_number))
+        log_write.add_indent()
+        simulate_number = execute_simulation(execute_file,simulate_params,simulate_number,simulate_directory,log_write)
+        log_write.decrease_indent()
+
+    param_dict_original['time_info']['end_time'] = stop_watch.end()
+    json_set(param_dict_original,parameter_file_simulation)
+    log_write('[all simulations complete]')
+
+
+def execute_simulation(execute_file,simulate_params,simulate_number,simulate_directory,log_write): 
+    stop_watch = StopWatch()
+    setting_manager = SettingManager(log_write) 
+
+    result_directory = os.path.join(simulate_directory,'number-' + str(simulate_number) + '/')
+    setting_manager.set_directory(result_directory)
+    execute_command = set_execute_command(execute_file,result_directory,simulate_params)
+    if(len(execute_command) < 1):
+        raise ValueError('the execute_file can not be find in {}'.format(os.getcwd()))
+    param_dict = {}
+    param_dict['simulate_params'] = copy.deepcopy(simulate_params)
+    param_dict['result_dir'] = result_directory
+    param_dict['execute_file'] = execute_file
+    param_dict['time_info'] = {}
+    param_dict['time_info']['start_time'] = stop_watch.start()
+
+    parameter_file_each_simulation = os.path.join(result_directory, 'parameter.json')
+    setting_manager.json_set(param_dict,parameter_file_each_simulation)
+
+    log_write('[execute : {}]'.format(stop_watch.start_time.strftime('%Y/%m/%d %H:%M:%S')))
+    p = subprocess.Popen(execute_command,stdout=log_open,stderr=log_open)
+    p.wait()
+    return_value = p.wait()
+    if(return_value != 0):
+        log_write('[Abnormal termination detected : return_value : {}]'.format(return_value))
+        reset_indent()
+        log_write('[Error End !]')
+        raise ValueError('[Abnormal termination detected : return_value : {}]'.format(return_value))
+
+    log_write('[finish  : {}]'.format(stop_watch.end()))
+    param_dict['time_info']['end_time'] = stop_watch.end_time.strftime('%Y/%m/%d %H:%M:%S')
+    json_set(param_dict,parameter_file_each_simulation)
+
+    simulate_number += 1
+    return simulate_number
+
+
+def set_execute_command(execute_file,result_directory,param_dict):
+    execute_command = []
+
+    if(execute_file.find('fpu_thermalization') > -1):
+        log_write('[detect : {}]'.format(execute_file))
+        files_list = os.listdir(os.getcwd())
+        if(not execute_file in files_list):
+            log_write('[Error ! : can not find execute_file!]')
         else:
-            self.__log_write('[total number of simulations : 1]')
-            self.__log_write('[simulation : number-{}]'.format(simulate_number))
-            self.__add_indent()
-            simulate_number = self.__operate_simulation(execute_file,simulate_params,simulate_number,simulate_dir_name)
-            self.__decrease_indent()
-  
-        end_time = datetime.datetime.now()
-        param_dict_original['time_info']['end_time'] = end_time.strftime('%Y/%m/%d %H:%M:%S')
-        json_log_file_name = simulate_dir_name + 'parameter.json'
-        self.__json_set(param_dict_original,json_log_file_name)
-        self.__log_write('[all simulations complete]')
-
-
-    def __operate_simulation(self,execute_file,simulate_params,simulate_number,simulate_dir_name): 
-        result_dir = simulate_dir_name + 'number-' + str(simulate_number) + '/'
-        self.__set_directory(result_dir)
-        param_dict = {}
-        param_dict['simulate_params'] = copy.deepcopy(simulate_params)
-        self.__execute_simulation(execute_file,result_dir,simulate_params)
-        simulate_number += 1
-        return simulate_number
-  
-    def __set_experiment_tag(self,experiment_tag,Add=False):
-        if(Add):
-          self.experiment_tag += experiment_tag
-        else:
-          self.experiment_tag = experiment_tag
-  
-    def __init_experiment_tag(self):
-        self.experiment_tag = ''
-
-    def __reset_indent(self):
-        self.__nest_number = 0
-
-    def __add_indent(self):
-        self.__nest_number += 1
-
-    def __decrease_indent(self):
-        self.__nest_number -= 1
-
-    def __set_indent_str(self):
-        indent_str = ''
-        for i in range(self.__nest_number):
-            indent_str += '  ' 
-        return indent_str
-
-    def __json_set(self,parameter_dict,file_name):
-        f = open(file_name,'w')
-        json.dump(parameter_dict,f,indent=4)
-        f.close()
-
-    def __log_write(self,sentence,temp_log_file_name=None):
-        if(temp_log_file_name==None):
-            f = open(self.__log_file_name,"a")
-        else:
-            f = open(temp_log_file_name,"a")
-        indent_str = self.__set_indent_str()
-        sentence = indent_str + sentence
-        f.write(sentence + '\n')
-        f.close()
-        if(self.__cout):
-            print(sentence)
-
-    def __set_directory(self,dir_name):
-      if(os.path.exists(dir_name) != True):
-        os.mkdir(dir_name)
-        self.__log_write('[Create : {}]'.format(dir_name))
-      else:
-        self.__log_write('[Already exist]')
-
-    def __set_top_directory(self, dir_name):
-        self.__top_directory = dir_name
-
-    def __end_log_copy(self):
-        shutil.copy(self.__log_file_name,self.__top_directory + 'log.dat')
-  
-    def __execute_simulation(self,execute_file,result_dir,param_dict):
-        operate_set = []
-        info = True
-
-        if(execute_file.find('fpu_thermalization') > -1):
-            self.__log_write('[detect : {}]'.format(execute_file))
-            files_list = os.listdir(os.getcwd())
-            if(not execute_file in files_list):
-                self.__log_write('[Error ! : can not find execute_file!]')
-                info = False
-            else:
-                execute_file = './' + execute_file 
-                operate_set.append(execute_file) 
-                operate_set.append(result_dir)
-                operate_set.append(str(int(param_dict['Ns']))) 
-                operate_set.append(str(int(param_dict['N_time']))) 
-                operate_set.append(str(param_dict['t']))
-                operate_set.append(str(param_dict['alpha']))
-                operate_set.append(str(param_dict['beta']))
-                operate_set.append(str(param_dict['E_initial']))
-                operate_set.append(str(int(param_dict['N_normalmode']))) 
-                operate_set.append(str(int(param_dict['n_bin'])))
-                operate_set.append(str(int(param_dict['N_loop']))) 
-                operate_set.append(str(int(param_dict['N_parallel']))) 
-                operate_set.append(str(int(param_dict['N_time_resolve']))) 
-                log_file_name = self.__log_file_name
-                log_open = open(log_file_name,'a')
-                self.__log_write('[command line input]')
-                self.__log_write('{}'.format(operate_set))
-
-
-        elif(execute_file.find('clXYmodelNonEq') > -1):
-            self.__log_write('[detect : {}]'.format(execute_file))
-            files_list = os.listdir(os.getcwd())
-            if(not execute_file in files_list):
-                self.__log_write('[Error ! : can not find execute_file!]')
-                info = False
-            else:
-                execute_file = './' + execute_file 
-                operate_set.append(execute_file) 
-                operate_set.append(result_dir)
-                operate_set.append(str(int(param_dict['N_thermalize']))) 
-                operate_set.append(str(int(param_dict['Ns']))) 
-                operate_set.append(str(param_dict['T']))
-                operate_set.append(str(int(param_dict['N_time']))) 
-                operate_set.append(str(param_dict['t']))
-                operate_set.append(str(int(param_dict['n_bin'])))
-                operate_set.append(str(int(param_dict['N_loop']))) 
-                operate_set.append(str(int(param_dict['N_parallel']))) 
-                operate_set.append(str(int(param_dict['N_time_resolve']))) 
-                operate_set.append(str(int(param_dict['Ns_observe']))) 
-                operate_set.append(str(param_dict['D'])) 
-                operate_set.append(str(param_dict['Inte'])) 
-                operate_set.append(str(param_dict['Freq'])) 
-                log_file_name = self.__log_file_name
-                log_open = open(log_file_name,'a')
-                self.__log_write('[command line input]')
-                self.__log_write('{}'.format(operate_set))
-
-        elif(execute_file.find('clSpindemo') > -1 ):
-            self.__log_write('[detect : {}]'.format(execute_file))
-            files_list = os.listdir(os.getcwd())
-            if(not execute_file in files_list):
-                self.__log_write('[Error ! : can not find execute_file!]')
-                info = False
-            else:
-                execute_file = './' + execute_file 
-                operate_set.append(execute_file) 
-                operate_set.append(result_dir)
-                operate_set.append(str(int(param_dict['N_thermalize']))) 
-                operate_set.append(str(int(param_dict['Ns']))) 
-                operate_set.append(str(param_dict['T']))
-                operate_set.append(str(int(param_dict['N_time']))) 
-                operate_set.append(str(param_dict['t']))
-                operate_set.append(str(int(param_dict['N_relax']))) 
-                operate_set.append(str(int(param_dict['Ns_observe']))) 
-                log_file_name = self.__log_file_name
-                log_open = open(log_file_name,'a')
-                self.__log_write('[command line input]')
-                self.__log_write('{}'.format(operate_set))
-
-        elif(execute_file.find('clXYmodelCriticalMD') > -1 ):
-            self.__log_write('[detect : {}]'.format(execute_file))
-            files_list = os.listdir(os.getcwd())
-            if(not execute_file in files_list):
-                self.__log_write('[Error ! : can not find execute_file!]')
-                info = False
-            else:
-                execute_file = './' + execute_file 
-                operate_set.append(execute_file) 
-                operate_set.append(result_dir)
-                operate_set.append(str(int(param_dict['N_thermalize']))) 
-                operate_set.append(str(int(param_dict['Ns']))) 
-                operate_set.append(str(param_dict['T']))
-                operate_set.append(str(param_dict['d_T'])) 
-                operate_set.append(str(int(param_dict['N_T']))) 
-                operate_set.append(str(int(param_dict['N_loop']))) 
-                operate_set.append(str(int(param_dict['N_time']))) 
-                operate_set.append(str(param_dict['t']))
-                operate_set.append(str(int(param_dict['N_parallel']))) 
-                operate_set.append(str(int(param_dict['Ns_observe']))) 
-                operate_set.append(str(int(param_dict['n_bin']))) 
-                log_file_name = self.__log_file_name
-                log_open = open(log_file_name,'a')
-                self.__log_write('[command line input]')
-                self.__log_write('{}'.format(operate_set))
-
-        elif(execute_file.find('clXYmodelCritical') > -1 ):
-            self.__log_write('[detect : {}]'.format(execute_file))
-            files_list = os.listdir(os.getcwd())
-            if(not execute_file in files_list):
-                self.__log_write('[Error ! : can not find execute_file!]')
-                info = False
-            else:
-                execute_file = './' + execute_file 
-                operate_set.append(execute_file) 
-                operate_set.append(result_dir)
-                operate_set.append(str(int(param_dict['N_thermalize']))) 
-                operate_set.append(str(int(param_dict['Ns']))) 
-                operate_set.append(str(param_dict['T']))
-                operate_set.append(str(param_dict['d_T'])) 
-                operate_set.append(str(int(param_dict['N_T']))) 
-                operate_set.append(str(int(param_dict['N_loop']))) 
-                operate_set.append(str(int(param_dict['N_relax']))) 
-                operate_set.append(str(int(param_dict['N_parallel']))) 
-                operate_set.append(str(int(param_dict['Ns_observe']))) 
-                operate_set.append(str(int(param_dict['n_bin']))) 
-                log_file_name = self.__log_file_name
-                log_open = open(log_file_name,'a')
-                self.__log_write('[command line input]')
-                self.__log_write('{}'.format(operate_set))
-
-        elif(execute_file.find('clXYmodelWangLandau') > -1):
-            self.__log_write('[detect : {}]'.format(execute_file))
-            files_list = os.listdir(os.getcwd())
-            if(not execute_file in files_list):
-                self.__log_write('[Error ! : can not find execute_file!]')
-                info = False
-            else:
-                execute_file = './' + execute_file 
-                operate_set.append(execute_file) 
-                operate_set.append(result_dir)
-                operate_set.append(str(int(param_dict['Ns'])))
-                operate_set.append(str(param_dict['bin']))
-                operate_set.append(str(param_dict['E_max']))
-                operate_set.append(str(param_dict['E_min']))
-                operate_set.append(str(int(param_dict['max_iteration']))) 
-                log_file_name = self.__log_file_name
-                log_open = open(log_file_name,'a')
-                self.__log_write('[command line input]')
-                self.__log_write('{}'.format(operate_set))
-
-        elif(execute_file.find('clXYmodel') > -1):
-          self.__log_write('[detect : {}]'.format(execute_file))
-          files_list = os.listdir(os.getcwd())
-          if(not execute_file in files_list):
-            self.__log_write('[Error ! : can not find execute_file!]')
-            info = False
-          else:
             execute_file = './' + execute_file 
-            operate_set.append(execute_file) 
-            operate_set.append(result_dir)
-            operate_set.append(str(int(param_dict['N_thermalize']))) 
-            operate_set.append(str(int(param_dict['Ns']))) 
-            operate_set.append(str(param_dict['T']))
-            operate_set.append(str(int(param_dict['N_time']))) 
-            operate_set.append(str(param_dict['t']))
-            operate_set.append(str(int(param_dict['n_bin'])))
-            operate_set.append(str(int(param_dict['N_loop']))) 
-            operate_set.append(str(int(param_dict['N_parallel']))) 
-            operate_set.append(str(int(param_dict['N_time_resolve']))) 
-            operate_set.append(str(int(param_dict['Ns_observe']))) 
-            log_file_name = self.__log_file_name
-            log_open = open(log_file_name,'a')
-            self.__log_write('[command line input]')
-            self.__log_write('{}'.format(operate_set))
+            execute_command.append(execute_file) 
+            execute_command.append(result_directory)
+            execute_command.append(str(int(param_dict['Ns']))) 
+            execute_command.append(str(int(param_dict['N_time']))) 
+            execute_command.append(str(param_dict['t']))
+            execute_command.append(str(param_dict['alpha']))
+            execute_command.append(str(param_dict['beta']))
+            execute_command.append(str(param_dict['E_initial']))
+            execute_command.append(str(int(param_dict['N_normalmode']))) 
+            execute_command.append(str(int(param_dict['n_bin'])))
+            execute_command.append(str(int(param_dict['N_loop']))) 
+            execute_command.append(str(int(param_dict['N_parallel']))) 
+            execute_command.append(str(int(param_dict['N_time_resolve']))) 
+            log_file = log_file
+            log_open = open(log_file,'a')
+            log_write('[command line input]')
+            log_write('{}'.format(execute_command))
 
-        elif(execute_file.find('MPO') > -1):
-            self.__log_write('[detect : {}]'.format('MPO'))
-            files_list = os.listdir(os.getcwd())
-            if(not execute_file in files_list):
-                self.__log_write('[Error ! : can not find execute_file!]')
-                info = False
-            else:
-                operate_set.append('python') 
-                operate_set.append(execute_file) 
-                operate_set.append(result_dir)
-                operate_set.append(str(int(param_dict['N']))) 
-                operate_set.append(str(int(param_dict['D']))) 
-                operate_set.append(str(param_dict['J']))
-                operate_set.append(str(param_dict['h']))
-                operate_set.append(str(param_dict['V']))
-                operate_set.append(str(param_dict['coef']))
-                operate_set.append(str(param_dict['t']))
-                operate_set.append(str(int(param_dict['N_time'])))
-                operate_set.append(str(param_dict['T']))
-                operate_set.append(str(int(param_dict['tagged'])))
-                operate_set.append(str(param_dict['test_mode']))
-                log_file_name = self.__log_file_name
-                log_open = open(log_file_name,'a')
-                self.__log_write('[command line input]')
-                self.__log_write('{}'.format(operate_set))
-  
+
+    elif(execute_file.find('clXYmodelNonEq') > -1):
+        log_write('[detect : {}]'.format(execute_file))
+        files_list = os.listdir(os.getcwd())
+        if(not execute_file in files_list):
+            log_write('[Error ! : can not find execute_file!]')
         else:
-            self.__log_write('[can not find !]')
-  
-        param_dict['result_dir'] = result_dir
-        param_dict['execute_file'] = execute_file
-        param_dict['time_info'] = {}
-        start_time =  datetime.datetime.now() 
-        param_dict['time_info']['start_time'] = start_time.strftime('%Y/%m/%d %H:%M:%S')
-        json_log_file_name = result_dir + 'parameter.json'
-        self.__json_set(param_dict,json_log_file_name)
-        if(info):
-            self.__log_write('[execute : {}]'.format(start_time.strftime('%Y/%m/%d %H:%M:%S')))
-  
-        if(len(operate_set) > 0):
-            if(info):
-                p = subprocess.Popen(operate_set,stdout=log_open,stderr=log_open)
-                p.wait()
-                return_value = p.wait()
-                if(return_value != 0):
-                    self.__log_write('[Abnormal termination detected : return_value : {}]'.format(return_value))
-                    self.__reset_indent()
-                    self.__log_write('[Error End !]')
-                    self.__end_log_copy()
-                    sys.exit()
-                log_open.close()
-  
-        elif(execute_file.find('MPO') > -1):
-            filename = result_dir + "result.dat"
-            MPO_experiment(param_dict,filename,self)
-  
-        end_time = datetime.datetime.now()
-        self.__log_write('[finish  : {}]'.format(end_time.strftime('%Y/%m/%d %H:%M:%S')))
-        param_dict['time_info']['end_time'] = end_time.strftime('%Y/%m/%d %H:%M:%S')
-        self.__json_set(param_dict,json_log_file_name)
+            execute_file = './' + execute_file 
+            execute_command.append(execute_file) 
+            execute_command.append(result_directory)
+            execute_command.append(str(int(param_dict['N_thermalize']))) 
+            execute_command.append(str(int(param_dict['Ns']))) 
+            execute_command.append(str(param_dict['T']))
+            execute_command.append(str(int(param_dict['N_time']))) 
+            execute_command.append(str(param_dict['t']))
+            execute_command.append(str(int(param_dict['n_bin'])))
+            execute_command.append(str(int(param_dict['N_loop']))) 
+            execute_command.append(str(int(param_dict['N_parallel']))) 
+            execute_command.append(str(int(param_dict['N_time_resolve']))) 
+            execute_command.append(str(int(param_dict['Ns_observe']))) 
+            execute_command.append(str(param_dict['D'])) 
+            execute_command.append(str(param_dict['Inte'])) 
+            execute_command.append(str(param_dict['Freq'])) 
+            log_file = log_file
+            log_open = open(log_file,'a')
+            log_write('[command line input]')
+            log_write('{}'.format(execute_command))
 
+    elif(execute_file.find('clSpindemo') > -1 ):
+        log_write('[detect : {}]'.format(execute_file))
+        files_list = os.listdir(os.getcwd())
+        if(not execute_file in files_list):
+            log_write('[Error ! : can not find execute_file!]')
+        else:
+            execute_file = './' + execute_file 
+            execute_command.append(execute_file) 
+            execute_command.append(result_directory)
+            execute_command.append(str(int(param_dict['N_thermalize']))) 
+            execute_command.append(str(int(param_dict['Ns']))) 
+            execute_command.append(str(param_dict['T']))
+            execute_command.append(str(int(param_dict['N_time']))) 
+            execute_command.append(str(param_dict['t']))
+            execute_command.append(str(int(param_dict['N_relax']))) 
+            execute_command.append(str(int(param_dict['Ns_observe']))) 
+            log_file = log_file
+            log_open = open(log_file,'a')
+            log_write('[command line input]')
+            log_write('{}'.format(execute_command))
+
+    elif(execute_file.find('clXYmodelCriticalMD') > -1 ):
+        log_write('[detect : {}]'.format(execute_file))
+        files_list = os.listdir(os.getcwd())
+        if(not execute_file in files_list):
+            log_write('[Error ! : can not find execute_file!]')
+        else:
+            execute_file = './' + execute_file 
+            execute_command.append(execute_file) 
+            execute_command.append(result_directory)
+            execute_command.append(str(int(param_dict['N_thermalize']))) 
+            execute_command.append(str(int(param_dict['Ns']))) 
+            execute_command.append(str(param_dict['T']))
+            execute_command.append(str(param_dict['d_T'])) 
+            execute_command.append(str(int(param_dict['N_T']))) 
+            execute_command.append(str(int(param_dict['N_loop']))) 
+            execute_command.append(str(int(param_dict['N_time']))) 
+            execute_command.append(str(param_dict['t']))
+            execute_command.append(str(int(param_dict['N_parallel']))) 
+            execute_command.append(str(int(param_dict['Ns_observe']))) 
+            execute_command.append(str(int(param_dict['n_bin']))) 
+            log_file = log_file
+            log_open = open(log_file,'a')
+            log_write('[command line input]')
+            log_write('{}'.format(execute_command))
+
+    elif(execute_file.find('clXYmodelCritical') > -1 ):
+        log_write('[detect : {}]'.format(execute_file))
+        files_list = os.listdir(os.getcwd())
+        if(not execute_file in files_list):
+            log_write('[Error ! : can not find execute_file!]')
+        else:
+            execute_file = './' + execute_file 
+            execute_command.append(execute_file) 
+            execute_command.append(result_directory)
+            execute_command.append(str(int(param_dict['N_thermalize']))) 
+            execute_command.append(str(int(param_dict['Ns']))) 
+            execute_command.append(str(param_dict['T']))
+            execute_command.append(str(param_dict['d_T'])) 
+            execute_command.append(str(int(param_dict['N_T']))) 
+            execute_command.append(str(int(param_dict['N_loop']))) 
+            execute_command.append(str(int(param_dict['N_relax']))) 
+            execute_command.append(str(int(param_dict['N_parallel']))) 
+            execute_command.append(str(int(param_dict['Ns_observe']))) 
+            execute_command.append(str(int(param_dict['n_bin']))) 
+            log_file = log_file
+            log_open = open(log_file,'a')
+            log_write('[command line input]')
+            log_write('{}'.format(execute_command))
+
+    elif(execute_file.find('clXYmodelWangLandau') > -1):
+        log_write('[detect : {}]'.format(execute_file))
+        files_list = os.listdir(os.getcwd())
+        if(not execute_file in files_list):
+            log_write('[Error ! : can not find execute_file!]')
+        else:
+            execute_file = './' + execute_file 
+            execute_command.append(execute_file) 
+            execute_command.append(result_directory)
+            execute_command.append(str(int(param_dict['Ns'])))
+            execute_command.append(str(param_dict['bin']))
+            execute_command.append(str(param_dict['E_max']))
+            execute_command.append(str(param_dict['E_min']))
+            execute_command.append(str(int(param_dict['max_iteration']))) 
+            log_file = log_file
+            log_open = open(log_file,'a')
+            log_write('[command line input]')
+            log_write('{}'.format(execute_command))
+
+    elif(execute_file.find('clXYmodel') > -1):
+      log_write('[detect : {}]'.format(execute_file))
+      files_list = os.listdir(os.getcwd())
+      if(not execute_file in files_list):
+        log_write('[Error ! : can not find execute_file!]')
+      else:
+        execute_file = './' + execute_file 
+        execute_command.append(execute_file) 
+        execute_command.append(result_directory)
+        execute_command.append(str(int(param_dict['N_thermalize']))) 
+        execute_command.append(str(int(param_dict['Ns']))) 
+        execute_command.append(str(param_dict['T']))
+        execute_command.append(str(int(param_dict['N_time']))) 
+        execute_command.append(str(param_dict['t']))
+        execute_command.append(str(int(param_dict['n_bin'])))
+        execute_command.append(str(int(param_dict['N_loop']))) 
+        execute_command.append(str(int(param_dict['N_parallel']))) 
+        execute_command.append(str(int(param_dict['N_time_resolve']))) 
+        execute_command.append(str(int(param_dict['Ns_observe']))) 
+        log_file = log_file
+        log_open = open(log_file,'a')
+        log_write('[command line input]')
+        log_write('{}'.format(execute_command))
+
+    elif(execute_file.find('MPO') > -1):
+        log_write('[detect : {}]'.format('MPO'))
+        files_list = os.listdir(os.getcwd())
+        if(not execute_file in files_list):
+            log_write('[Error ! : can not find execute_file!]')
+        else:
+            execute_command.append('python') 
+            execute_command.append(execute_file) 
+            execute_command.append(result_directory)
+            execute_command.append(str(int(param_dict['N']))) 
+            execute_command.append(str(int(param_dict['D']))) 
+            execute_command.append(str(param_dict['J']))
+            execute_command.append(str(param_dict['h']))
+            execute_command.append(str(param_dict['V']))
+            execute_command.append(str(param_dict['coef']))
+            execute_command.append(str(param_dict['t']))
+            execute_command.append(str(int(param_dict['N_time'])))
+            execute_command.append(str(param_dict['T']))
+            execute_command.append(str(int(param_dict['tagged'])))
+            execute_command.append(str(param_dict['test_mode']))
+            log_file = log_file
+            log_open = open(log_file,'a')
+            log_write('[command line input]')
+            log_write('{}'.format(execute_command))
+
+    else:
+        log_write('[can not find !]')
+
+    return execute_command
 
