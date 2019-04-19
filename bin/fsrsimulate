@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 
 import sys
-from fsrtools.simulate_tools import ExperimentManager
+from fsrtools.simulate_tools import operate_experiments
 
 def main():
     import argparse
@@ -16,8 +16,7 @@ def main():
         print('setup test : fsrsimulate : ok')
     else:
         args = vars(parser.parse_args())
-        expmanager = ExperimentManager(parameter_file=args['json'],log_file=args['log_file'],cout=args['cout'],test_mode=args['test'])
-        expmanager.operate_experiments()
+        operate_experiments(parameter_file=args['json'],log_file=args['log_file'],cout=args['cout'],test_mode=args['test'])
 
 
 if __name__ == '__main__':
