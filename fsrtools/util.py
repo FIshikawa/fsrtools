@@ -1,6 +1,8 @@
 import json
+from datetime import datetime
 import time 
 import os
+
 
 class LogManager:
     """
@@ -31,7 +33,7 @@ class LogManager:
             os.remove(log_file)
         self.log_file = log_file
         self.indent = indent
-        self.cout_tag = cout_tag
+        self._cout_tag = cout_tag
 
     def __indent(self):
         indent_str = ''
@@ -49,14 +51,14 @@ class LogManager:
     def __call__(self,sentence,log_file_temp=None):
         sentence = self.__indent() + sentence
         if(log_file_temp is None and self.log_file is not None):
-            f = open(self.log_file,"a")
+            f = open(self.log_file,'a')
             f.write(sentence + '\n')
             f.close()
         elif(log_file_temp is not None):
-            f = open(log_file_temp,"a")
+            f = open(log_file_temp,'a')
             f.write(sentence + '\n')
             f.close()
-        if(self.__cout_tag):
+        if(self._cout_tag):
             print(sentence)
 
 
@@ -78,6 +80,14 @@ class StopWatch:
         self.lap_start = None 
         self.lap_end = None 
         self.split_time = None
+
+    def start_time_str(self):
+        start_time_cnv = time.strptime(time.ctime(self.start_time))
+        return time.strftime("%Y/%m/%d %H:%M:%S", start_time_cnv)
+
+    def end_time_str(self):
+        self.end_time = time.time()
+        end_time_cnv = time.strptime(time.ctime(self.end_time))
 
     def start(self):
         self.start_time = time.time()
@@ -138,12 +148,36 @@ class SettingManager:
     def set_directory(self,directory_name):
         if(os.path.exists(directory_name) != True):
           os.mkdir(directory_name)
-          log_manager('[Create : {}]'.format(directory_name))
+          self.__log_manager('[Create : {}]'.format(directory_name))
         else:
-          log_manager('[Already exist]')
+          self.__log_manager('[Already exist]')
 
     def json_set(self,parameter_dict,file_name):
         f = open(file_name,'w')
         json.dump(parameter_dict,f,indent=4)
         f.close()
+
+
+def colors(color):
+    colors_dict= {'BLACK'     : '\033[30m',
+                  'RED'       : '\033[31m',
+                  'GREEN'     : '\033[32m',
+                  'YELLOW'    : '\033[33m',
+                  'BLUE'      : '\033[34m',
+                  'PURPLE'    : '\033[35m',
+                  'CYAN'      : '\033[36m',
+                  'WHITE'     : '\033[37m',
+                  'END'       : '\033[0m' ,
+                  'BOLD'      : '\038[1m' ,
+                  'UNDERLINE' : '\033[4m' ,
+                  'INVISIBLE' : '\033[08m',
+                  'REVERCE'   : '\033[07m'
+                  }
+    return colors_dict[color]
+
+
+def color_print(sentence,color):
+    print(colors(color) + sentence + colors('END'))
+
+
 
