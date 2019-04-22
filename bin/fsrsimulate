@@ -2,7 +2,11 @@
 # -*- coding:utf-8 -*-
 
 import sys
+from IPython.terminal.embed import InteractiveShellEmbed
 from fsrtools.simulate_tools import operate_experiments
+from fsrtools.simulate_tools import CommandManager
+from fsrtools.util import colors
+from fsrtools.util import color_print
 
 def main():
     import argparse
@@ -12,11 +16,23 @@ def main():
     parser.add_argument('-t','--test',action='store_true',help='test mode option')
     parser.add_argument('--cout',action='store_true',help='out calculation')
     parser.add_argument('-lf','--log_file',action='store', default='log.dat',type=str,help='log file name : default "log.dat" or "log_test.dat" in test mode')
-    if('setup.py' in sys.argv):
-        print('setup test : fsrsimulate : ok')
+    parser.add_argument('--set_commands',action='store_true',help='set command mode : via IPython')
+
+    args = vars(parser.parse_args())
+    if(args['set_commands']):
+        print('set commands mode')
+        fsrsimulate = CommandManager()
+        itembed = InteractiveShellEmbed()
+        color_print('[Interactive Shell Mode]','GREEN')
+        color_print('[ATTENTION]','GREEN')
+        print(' [All configuration should be set by "fsrsimulate"]')
+        print(' [You can see help by "fsrsimilate.help()"]')
+        color_print('[Start IPython]','GREEN')
+        itembed()
+        color_print('[End Interactive Shell]','GREEN')
+
     else:
-        args = vars(parser.parse_args())
-        operate_experiments(parameter_file=args['json'],log_file=args['log_file'],cout=args['cout'],test_mode=args['test'])
+      operate_experiments(parameter_file=args['json'],log_file=args['log_file'],cout=args['cout'],test_mode=args['test'])
 
 
 if __name__ == '__main__':
