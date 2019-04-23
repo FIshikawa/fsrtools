@@ -11,12 +11,18 @@ from fsrtools.util import LogManager
 from fsrtools.util import colors
 from fsrtools.util import color_print
 
+def _commands_json_file(test=False):
+    if(test):
+        return os.path.join(fsrtools.__path__[0],'config/commands_test.json')
+    else:
+        return os.path.join(fsrtools.__path__[0],'config/commands.json')
+
+
 def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test_mode=False):
     current_directory = os.getcwd()
 
     if(test_mode):
-        log_file = 'log_test.dat'
-        parameter_file = 'parameter_test.json'
+        log_file = 'test/log_test.dat'
         cout_tag = True
 
     log_file = os.path.join(current_directory, log_file)
@@ -56,12 +62,12 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
                 for key_tt in json_data['experiments'][key][key_t].keys():
                     log_write('   {0} : {1}'.format(key_tt, json_data['experiments'][key][key_t][key_tt]))
 
-    experiment_directory = os.path.join(json_data['experiment_dir'], stop_watch.start_time.strftime('%Y-%m-%d-%H-%M-%S') + '/')
+    experiment_directory = os.path.join(json_data['experiment_dir'], stop_watch.start_time(format='%Y-%m-%d-%H-%M-%S') + '/')
     log_write('[set result output directory : {}]'.format(experiment_directory))
     setting_manager.set_directory(experiment_directory)
 
     json_data['time_info'] = {}
-    json_data['time_info']['start_time'] = start_time.strftime('%Y/%m/%d %H:%M:%S')
+    json_data['time_info']['start_time'] = stop_watch.start_time()
     parameter_file_for_record = os.path.join(experiment_directory,'parameter.json')
     setting_manager.json_set(json_data, parameter_file_for_record)
 
@@ -93,8 +99,8 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
 
     log_write('[finish time : {}]'.format(stop_watch.end()))
     log_write('[duration : {}]'.format(stop_watch.duration()))
-    json_data['time_info']['finish_time'] = stop_watch.end_time.strftime('%Y/%m/%d %H:%M:%S')
-    json_data['time_info']['duration'] = stop_watch.duration.strftime('%d:%H:%M:%S')
+    json_data['time_info']['finish_time'] = stop_watch.end_time()
+    json_data['time_info']['duration'] = stop_watch.duration()
     setting_manager.json_set(json_data, parameter_file_for_record)
     shutil.copy(log_file,os.path.join(experiment_directory,'log.dat'))
 
@@ -120,16 +126,17 @@ def operate_simulations(param_dict_original,experiment_tag,log_write):
     param_dict_original['time_info'] = {}
     param_dict_original['time_info']['start_time'] = stop_watch.start()
     parameter_file_simulation = os.path.join(simulate_directory,'parameter.json')
-    json_set(param_dict_original,parameter_file_simulation)
+    setting_manager.json_set(param_dict_original,parameter_file_simulation)
 
     command_name = experiment_params['command_name']
 
     simulate_params, iterate_dict , iterate_key_list, iterate_pair = set_simulate_params_iterate_dict(simulate_params,\
                                                                                                       command_name,\
-                                                                                                      indent=nest_number,\
-                                                                                                      log_file=log_file)
+                                                                                                      log_write)
 
     simulate_number = 1
+    commands_json = open(_commands_json_file())
+    command_data = json.load(commands_json)
     if(len(iterate_dict.keys()) != 0):
         log_write('[check iterate lists]')
         log_write('[iterate_key_list] : {}'.format(iterate_key_list))
@@ -142,7 +149,7 @@ def operate_simulations(param_dict_original,experiment_tag,log_write):
             log_write.add_indent()
             result_directory = os.path.join(simulate_directory,'number-' + str(simulate_number) + '/')
             setting_manager.set_directory(result_directory)
-            execute_simulation(command_name,simulate_params,result_directory,log_write)
+            execute_simulation(command_name,simulate_params,result_directory,log_write,command_data)
             simulate_number += 1
             log_write.decrease_indent()
     else:
@@ -151,16 +158,16 @@ def operate_simulations(param_dict_original,experiment_tag,log_write):
         log_write.add_indent()
         result_directory = os.path.join(simulate_directory,'number-' + str(simulate_number) + '/')
         setting_manager.set_directory(result_directory)
-        execute_simulation(command_name,simulate_params,result_directory,log_write)
+        execute_simulation(command_name,simulate_params,result_directory,log_write,command_data)
         simulate_number += 1
         log_write.decrease_indent()
 
     param_dict_original['time_info']['end_time'] = stop_watch.end()
-    json_set(param_dict_original,parameter_file_simulation)
+    setting_manager.json_set(param_dict_original,parameter_file_simulation)
     log_write('[all simulations complete]')
 
 
-def execute_simulation(command_name,simulate_params,result_directory,log_write): 
+def execute_simulation(command_name,simulate_params,result_directory,log_write,command_data): 
     stop_watch = StopWatch()
     setting_manager = SettingManager(log_write) 
 
@@ -170,16 +177,17 @@ def execute_simulation(command_name,simulate_params,result_directory,log_write):
     param_dict['simulate_params']['result_directory'] = result_directory
     param_dict['time_info'] = {}
     param_dict['time_info']['start_time'] = stop_watch.start()
-    execute_command = set_execute_command(command_name,param_dict['simulate_params'],log_write)
-    if(len(execute_command) < 1):
-        raise ValueError('the command_name can not be find in {}'.format(os.getcwd()))
+    execute_command = set_execute_command(command_name,param_dict['simulate_params'],log_write,command_data)
 
     parameter_file_each_simulation = os.path.join(result_directory, 'parameter.json')
     setting_manager.json_set(param_dict,parameter_file_each_simulation)
 
-    log_write('[execute : {}]'.format(stop_watch.start_time_str()))
+    log_write('[execute : {}]'.format(stop_watch.start_time()))
     log_open = open(log_write.log_file,'a')
-    p = subprocess.Popen(execute_command,stdout=log_open,stderr=log_open)
+    if(log_write.cout_tag):
+        p = subprocess.Popen(execute_command)
+    else:
+        p = subprocess.Popen(execute_command,stdout=log_open,stderr=log_open)
     p.wait()
     log_open.close()
     return_value = p.wait()
@@ -190,23 +198,24 @@ def execute_simulation(command_name,simulate_params,result_directory,log_write):
         raise ValueError('[Abnormal termination detected : return_value : {}]'.format(return_value))
 
     log_write('[finish  : {}]'.format(stop_watch.end()))
-    param_dict['time_info']['end_time'] = stop_watch.end_time_str()
+    param_dict['time_info']['end_time'] = stop_watch.end_time()
     setting_manager.json_set(param_dict,parameter_file_each_simulation)
 
 
-
-def set_execute_command(command_name,simulate_params,log_write):
+def set_execute_command(command_name,simulate_params,log_write,command_data):
     execute_command = []
-    commands_json = open(commands_json_file())
-    commands_data = json.load(commands_json)
-    if(command_name in commands_data.keys()):
+    if(command_name in command_data.keys()):
         log_write('[detect : {}]'.format(command_name))
-        command_list = commands_data[command_name]
+        command_list = command_data[command_name]
     else:
         log_write('[can not find !]')
+        raise ValueError('{} is not defined as command'.format(command_name))
 
     for key in command_list:
-        execute_command.append(simulate_params[key])
+        if(key in simulate_params.keys()):
+            execute_command.append(str(simulate_params[key]))
+        else:
+            execute_command.append(key)
     log_write('[command_name line input]')
     log_write('{}'.format(execute_command))
 
@@ -234,29 +243,28 @@ def product_combination_generator(iterate_dict):
     return key_list, total_combination
 
 
-def set_simulate_params_iterate_dict(simulate_params,command_name,indent=0,log_file=None):
+def set_simulate_params_iterate_dict(simulate_params,command_name,log_write):
     iterate_dict = {}
-    logman = LogManager(indent=indent,log_file=log_file)
     for key in simulate_params.keys():
         if(isinstance(simulate_params[key], list)):
             iterate_dict[key] = simulate_params[key]
-            logman.log_write('[detect : {0} : {1}]'.format(key, simulate_params[key]))
+            log_write('[detect : {0} : {1}]'.format(key, simulate_params[key]))
         elif(simulate_params[key] in ['Sweep','Power']):
             iterate_dict[key] = []
-            logman.log_write('[detect : {0} : {1}]'.format(key, simulate_params[key]))
-            logman.log_write('[number of iteration : {}]'.format(simulate_params['N_' + key]))
+            log_write('[detect : {0} : {1}]'.format(key, simulate_params[key]))
+            log_write('[number of iteration : {}]'.format(simulate_params['N_' + key]))
             if(simulate_params[key] == 'Sweep'):
                 for i in range(simulate_params['N_' + key]):
                     iterate_dict[key].append(simulate_params[key+'_init'] + float(i) * simulate_params['d'+key])
             elif(simulate_params[key] == 'Power'):
                 for i in range(simulate_params['N_' + key]):
                     iterate_dict[key].append(np.power(simulate_params[key+'_init'],float(i+1)))
-                logman.log_write('{}'.format(iterate_dict[key]))
+                log_write('{}'.format(iterate_dict[key]))
 
     if('clXYmodel' in command_name or 'clSpindemo' in command_name or 'fpu_thermalization' in command_name):
         if('N_thermalize' in simulate_params.keys()):
             if(simulate_params['N_thermalize'] == 'Auto'):
-                logman.log_write('[detect : N_thermalize: Auto]')
+                log_write('[detect : N_thermalize: Auto]')
                 if(not isinstance(simulate_params['Ns'],str) and not isinstance(simulate_params['Ns'],list)): 
                     if(command_name.find('Cube') > 0):
                         simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] 
@@ -266,13 +274,13 @@ def set_simulate_params_iterate_dict(simulate_params,command_name,indent=0,log_f
                         simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] 
                     else:
                         simulate_params['N_thermalize'] =  simulate_params['Ns'] 
-                    logman.log_write('[N_thermalize : {}]'.format(simulate_params['N_thermalize']))
+                    log_write('[N_thermalize : {}]'.format(simulate_params['N_thermalize']))
                 elif(isinstance(simulate_params['Ns'],str) and isinstance(simulate_params['Ns'],list)): 
-                    logman.log_write('[N_thermalize is set at simulation later]')
+                    log_write('[N_thermalize is set at simulation later]')
 
         if('Ns' in simulate_params.keys()):
             if(simulate_params['Ns'] == 'Auto'):
-                logman.log_write('[detect : N_thermalize: Auto]')
+                log_write('[detect : N_thermalize: Auto]')
                 if(not isinstance(simulate_params['Ns'],str) and not isinstance(simulate_params['Ns'],list)): 
                     if(command_name.find('Cube') > 0):
                         simulate_params['Ns'] =  np.power(simulate_params['num_particles'],1/3)  
@@ -282,50 +290,50 @@ def set_simulate_params_iterate_dict(simulate_params,command_name,indent=0,log_f
                         simulate_params['Ns'] =  np.power(simulate_params['num_particles'],1/4)  
                     else:
                         simulate_params['Ns'] =  simulate_params['num_particles']
-                    logman.log_write('[Ns : {}]'.format(simulate_params['Ns']))
+                    log_write('[Ns : {}]'.format(simulate_params['Ns']))
                 elif(isinstance(simulate_params['Ns'],str) and isinstance(simulate_params['Ns'],list)): 
-                    logman.log_write('[Ns is set at simulation later]')
+                    log_write('[Ns is set at simulation later]')
 
         if('N_time' in simulate_params.keys()):
             if(simulate_params['N_time'] == 'Auto'):
-                logman.log_write('[detect : N_time : Auto]')
+                log_write('[detect : N_time : Auto]')
                 if(not isinstance(simulate_params['t'],str) and not isinstance(simulate_params['dt'],str)): 
                     if(not isinstance(simulate_params['t'],list) and not isinstance(simulate_params['dt'],list)): 
                         simulate_params['N_time'] =  int(simulate_params['t'] / simulate_params['dt'])
-                        logman.log_write('[N_time : {}]'.format(simulate_params['N_time']))
+                        log_write('[N_time : {}]'.format(simulate_params['N_time']))
             elif(isinstance(simulate_params['N_time'],str)):
-                logman.log_write('[N_time is set at simulation later]')
+                log_write('[N_time is set at simulation later]')
 
 
     elif(command_name.find('MPO') > -1):
         if('N_time' in simulate_params.keys()):
             if(simulate_params['N_time'] == 'Auto'):
-                logman.log_write('[detect : N_time : Auto]')
+                log_write('[detect : N_time : Auto]')
                 if(not isinstance(simulate_params['t'],str) and not isinstance(simulate_params['dt'],str)): 
                     if(not isinstance(simulate_params['t'],list) and not isinstance(simulate_params['dt'],list)): 
                         simulate_params['N_time'] =  int(simulate_params['t'] / simulate_params['dt'])
-                        logman.log_write('[N_time : {}]'.format(simulate_params['N_time']))
+                        log_write('[N_time : {}]'.format(simulate_params['N_time']))
             elif(isinstance(simulate_params['N_time'],str)):
-                logman.log_write('[N_time is set at simulation later]')
+                log_write('[N_time is set at simulation later]')
 
         if('D' in simulate_params.keys()):
             if(simulate_params['D'] == 'Auto'):
-                logman.log_write('[detect : {} : Auto]'.format('D'))
+                log_write('[detect : {} : Auto]'.format('D'))
                 if(not isinstance(simulate_params['N'],str)):
                     simulate_params['D'] = simulate_params['N'] * 2
-                    logman.log_write('[D : {1}]'.format(key, simulate_params['D']))
+                    log_write('[D : {1}]'.format(key, simulate_params['D']))
                 elif(isinstance(simulate_params['N'],str)):
-                    logman.log_write('[N will be set specially: set later]')
+                    log_write('[N will be set specially: set later]')
 
         if('tagged' in simulate_params.keys()):
             if(simulate_params['tagged'] == 'Auto'):
-                logman.log_write('[detect : {} : Auto]'.format('tagged'))
+                log_write('[detect : {} : Auto]'.format('tagged'))
                 if(not isinstance(simulate_params['N'],str)):
                     if(not isinstance(simulate_params['N'],list)): 
                      simulate_params['tagged'] = simulate_params['N'] // 2
-                    logman.log_write('[tagged : {1}]'.format(key, simulate_params['tagged']))
+                    log_write('[tagged : {1}]'.format(key, simulate_params['tagged']))
                 elif(isinstance(simulate_params['N'],str)):
-                    logman.log_write('[N will be set specially: set later]')
+                    log_write('[N will be set specially: set later]')
 
     iterate_list, total_combination = product_combination_generator(iterate_dict)
     return simulate_params, iterate_dict, iterate_list, total_combination
@@ -370,63 +378,77 @@ def set_simulate_params(simulate_params,iterate_key_list,iterate_pair,command_na
 
     return simulate_params
 
-def commands_json_file():
-    return os.path.join(fsrtools.__path__[0],'config/commands.json')
-
 
 class CommandManager:
     def __init__(self):
-        self.__json_path = commands_json_file()
-        commands_json = open(self.__json_path)
-        self.commands_data = json.load(commands_json)
-        self.commands_name_list = list(self.commands_data.keys())
-        self.commands_list()
+        self._json_path = _commands_json_file()
+        if(os.path.exists(self._json_path)):
+            commands_json = open(self._json_path)
+            self.command_data = json.load(commands_json)
+            self.command_name_list = list(self.command_data.keys())
+            self.command_list()
+        else:
+            self.coomands_data = {}
+            self.command_name_list= []
 
-    def commands_list(self):
-        for i in range(len(self.commands_name_list)):
-            command_name = self.commands_name_list[i]
+    def command_list(self):
+        for i in range(len(self.command_name_list)):
+            command_name = self.command_name_list[i]
             print('[{0}] command name : {1} '.format(i,command_name))
-            print('  {}'.format(self.commands_data[command_name]))
+            print('  {}'.format(self.command_data[command_name]))
 
     def command(self,command_id):
         if(isinstance(command_id,int)):
-            return self.commands_data[self.commands_name_list[command_id]]
+            return self.command_data[self.command_name_list[command_id]]
         elif(isinstance(command_id, str)):
-            return self.commands_data[command_id]
+            return self.command_data[command_id]
         else:
             raise ValueError('input is string or int')
 
 
     def add_command(self,command_dict):
         for key in command_dict.keys():
-            if key in self.commands_data.keys():
+            if key in self.command_data.keys():
                 color_print('Error : command "{0}" is already registered'.format(key),'RED')
             else:
                 print('add command "{0}"'.format(key))
                 print(command_dict)
-                self.commands_data[key] = commands_dict[key]
+                self.command_data[key] = command_dict[key]
+                self.command_name_list = list(self.command_data.keys())
 
     def remove_command(self,command_name):
-        if command_name in self.commands_data.keys():
+        if command_name in self.command_data.keys():
             print('command {0} is removed'.format(command_name))
-            del self.commands_data[command_name]
+            del self.command_data[command_name]
+            self.command_name_list = list(self.command_data.keys())
         else:
             color_print('Error : command {0} is not registered'.format(command_name),'RED')
 
     def save(self):
-        f = open(self.__json_path,'w')
-        json.dump(self.commands_data,f,indent=4)
+        print('save now defined commands')
+        f = open(self._json_path,'w')
+        json.dump(self.command_data,f,indent=4)
+        f.close()
+
+    def export(self):
+        current_directory = os.getcwd()
+        print('exprot commands.json in current directory')
+        f = open(os.path.join(current_directory,'commands.json'),'w')
+        json.dump(self.command_data,f,indent=4)
         f.close()
 
     def test_simulate(self,command_id,execute_part):
         if(isinstance(command_id,int)):
-            command_name =  self.commands_name_list[command_id]
-        if(not command_name in self.commands_name_list):
+            command_name =  self.command_name_list[command_id]
+        elif(not command_id in self.command_name_list):
             raise ValueError('not find {} in registered commands'.format(command_name))
-        if(not execute_part in self.commands_data[command_name]):
-            raise ValueError('{0} is not execute file part in {1}'.format(execute_part,command_name))
+        else:
+            command_name = command_id
+        for key in execute_part:
+            if(not key in self.command_data[command_name]):
+                raise ValueError('{0} is not execute file part in {1}'.format(execute_part,command_name))
         print('test simulate : {}'.format(command_name))
-        result_directory = './test_fsrsimulate/'
+        result_directory = './test/'
         print('result directory : {}'.format(result_directory))
         log_file = 'log.dat'
         print('log file name : {}'.format(log_file))
@@ -437,15 +459,29 @@ class CommandManager:
         setting_manager.set_directory(result_directory)
         print('all parameters are set 1 unifromaly')
         simulate_params = {}
-        for key in self.commands_data[command_name]:
+        for key in self.command_data[command_name]:
             if(key == 'result_directory'):
                 simulate_params[key] = result_directory
-            elif(key == execute_part):
-                simulate_params[execute_part] = execute_part
+            elif(key in execute_part):
+                simulate_params[key] = key
             else:
                 simulate_params[key] = '1'
-        execute_simulation(command_name,simulate_params,result_directory,log_write)
+        execute_simulation(command_name,simulate_params,result_directory,log_write,self.command_data)
         print('test simulate end')
+
+
+class CommandManagerTest(CommandManager):
+    def __init__(self):
+        super(CommandManager,self).__init__()
+        self._json_path = _commands_json_file(test=True)
+        if(os.path.exists(self._json_path)):
+            commands_json = open(self._json_path)
+            self.command_data = json.load(commands_json)
+            self.command_name_list = list(self.command_data.keys())
+            self.command_list()
+        else:
+            self.command_data = {}
+            self.command_name_list= []
 
 
 def time_log_print(dir,n_indent):
@@ -465,7 +501,7 @@ def time_log_print(dir,n_indent):
         execute_file = json_data['experiment_params']['execute_file']
         simulate_params, iterate_dict , iterate_key_list, iterate_pair = set_simulate_params_iterate_dict(simulate_params,
                                                                                                        execute_file,
-                                                                                                       indent=n_indent)
+                                                                                                       log_write)
         if('start_time' in time_info.keys() and len(time_info['start_time']) > 0):
             start_time = time_info['start_time']
         else:
