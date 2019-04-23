@@ -80,7 +80,7 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
 
         if('Same' in json_data['experiments'][key]['simulate_params'].keys()):
             if(len(previous_key) < 1):
-                print('[Error ! : previous simulation does not exist !]')
+                log_write('[Error ! : previous simulation does not exist !]')
                 continue 
             key_list_temp = list(json_data['experiments'][key]['simulate_params'].keys())
             key_list_temp.remove('Same')
@@ -274,7 +274,6 @@ def set_simulate_params(simulate_params,iterate_pair):
             for key_t in simulate_params.keys():
                 if(key_t in simulate_params[key]):
                     local_variable_dict[key_t] = simulate_params[key_t]
-            print(local_variable_dict)
             simulate_params_temp[key] = eval(simulate_params[key],globals(),local_variable_dict)
     return simulate_params_temp
 
