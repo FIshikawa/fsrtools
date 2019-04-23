@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+import datetime
 import time 
 import os
 
@@ -33,7 +33,7 @@ class LogManager:
             os.remove(log_file)
         self.log_file = log_file
         self.indent = indent
-        self._cout_tag = cout_tag
+        self.cout_tag = cout_tag
 
     def __indent(self):
         indent_str = ''
@@ -58,7 +58,7 @@ class LogManager:
             f = open(log_file_temp,'a')
             f.write(sentence + '\n')
             f.close()
-        if(self._cout_tag):
+        if(self.cout_tag):
             print(sentence)
 
 
@@ -74,59 +74,62 @@ class StopWatch:
 
 
     def __init__(self):
-        self.start_time = None 
-        self.end_time = None 
-        self.duration = None 
-        self.lap_start = None 
-        self.lap_end = None 
-        self.split_time = None
-
-    def start_time_str(self):
-        start_time_cnv = time.strptime(time.ctime(self.start_time))
-        return time.strftime("%Y/%m/%d %H:%M:%S", start_time_cnv)
-
-    def end_time_str(self):
-        self.end_time = time.time()
-        end_time_cnv = time.strptime(time.ctime(self.end_time))
+        self._start_time = None 
+        self._end_time = None 
+        self._duration = None 
+        self._lap_start = None 
+        self._lap_end = None 
+        self._split_time = None
 
     def start(self):
-        self.start_time = time.time()
-        start_time_cnv = time.strptime(time.ctime(self.start_time))
-        return time.strftime("%Y/%m/%d %H:%M:%S", start_time_cnv)
+        self._start_time = time.time()
+        start_time_cnv = time.localtime(self._start_time)
+        return time.strftime('%Y/%m/%d %H:%M:%S', start_time_cnv)
 
-    def end(self):
-        self.end_time = time.time()
-        end_time_cnv = time.strptime(time.ctime(self.end_time))
-        return time.strftime("%Y/%m/%d %H:%M:%S", end_time_cnv)
+    def start_time(self,format=None):
+        start_time_cnv = time.localtime(self._start_time)
+        if(format is None): 
+            return time.strftime('%Y/%m/%d %H:%M:%S', start_time_cnv)
+        else:
+            return time.strftime(format, start_time_cnv)
+
+    def end(self,format=None):
+        self._end_time = time.time()
+        end_time_cnv = time.localtime(self._end_time)
+        return time.strftime('%Y/%m/%d %H:%M:%S', end_time_cnv)
+
+    def end_time(self, format=None):
+        end_time_cnv = time.localtime(self._end_time)
+        if(format is None): 
+            return time.strftime('%Y/%m/%d %H:%M:%S', end_time_cnv)
+        else:
+            return time.strftime(format, start_time_cnv)
 
     def duration(self):
-        self.duration = self.end_time - self.start_time
-        time_duration_cnv = time.gmtime(self.duration)
-        return time.strftime("%d:%H:%M:%S", time_duration_cnv)
+        self._duration = datetime.timedelta(seconds=self._end_time - self._start_time)
+        return str(self._duration)
 
     def lap_start(self):
         self.lap_start = time.time()
-        start_time_cnv = time.strptime(time.ctime(self.lap_start))
-        return time.strftime("%Y/%m/%d %H:%M:%S", start_time_cnv)
+        start_time_cnv = time.localtime(self.lap_start)
+        return time.strftime('%Y/%m/%d %H:%M:%S', start_time_cnv)
 
     def lap_end(self):
         self.lap_end = time.time()
-        end_time_cnv = time.strptime(time.ctime(self.lap_end))
-        return time.strftime("%Y/%m/%d %H:%M:%S", start_time_cnv)
+        end_time_cnv = time.localtime(self.lap_end)
+        return time.strftime('%Y/%m/%d %H:%M:%S', end_time_cnv)
 
     def lap_time(self):
-        time_duration = self.lap_end - self.lap_start
-        time_duration_cnv = time.gmtime(time_duration)
-        return time.strftime("%d:%H:%M:%S", time_duration_cnv)
+        time_duration = datetime.timedelta(seconds=self.lap_end - self.lap_start)
+        return str(time_duration)
 
     def split_time(self):
         lap_temp = time.time()
-        time_duration = lap_temp - self.start_time
-        time_duration_cnv = time.gmtime(time_duration)
-        return time.strftime("%d:%H:%M:%S", time_duration_cnv)
+        time_duration = datetime.timedelta(seconds=lap_temp - self.start_time)
+        return str(time_duration)
 
     def nowtime(self):
-        return datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+        return datetime.datetime.now().strftime('%Y/%m/%d %H:%M:%S')
 
 
 class SettingManager:
