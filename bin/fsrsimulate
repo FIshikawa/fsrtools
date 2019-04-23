@@ -32,7 +32,7 @@ def main():
         color_print('[End Interactive Shell]','GREEN')
 
     else:
-      operate_experiments(parameter_file=args['json'],log_file=args['log_file'],cout=args['cout'],test_mode=args['test'])
+      operate_experiments(parameter_file=args['json'],log_file=args['log_file'],cout_tag=args['cout'],test_mode=args['test'])
 
 
 if __name__ == '__main__':
