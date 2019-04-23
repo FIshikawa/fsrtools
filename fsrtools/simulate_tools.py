@@ -349,6 +349,7 @@ class CommandManager:
                 raise ValueError('{0} is not execute file part in {1}'.format(execute_part,command_name))
         print('test simulate : {}'.format(command_name))
         result_directory = './test/'
+        files_list = os.listdir('./test/')
         print('result directory : {}'.format(result_directory))
         log_file = 'log.dat'
         print('log file name : {}'.format(log_file))
@@ -367,6 +368,9 @@ class CommandManager:
             else:
                 simulate_params[key] = '1'
         execute_simulation(command_name,simulate_params,result_directory,log_write,self.command_data)
+        files_list_created = os.listdir('./test/')
+        for key in list(set(files_list_created) - set(files_list)):
+            os.remove(os.path.join('./test',key))
         print('test simulate end')
 
 
