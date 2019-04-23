@@ -1,0 +1,7 @@
+{
+    "hello_world": [
+        "python",
+        "./test/hello_world.py",
+        "N_loop"
+    ]
+}
