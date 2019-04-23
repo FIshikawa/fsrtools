@@ -110,22 +110,22 @@ class StopWatch:
         return str(self._duration)
 
     def lap_start(self):
-        self.lap_start = time.time()
-        start_time_cnv = time.localtime(self.lap_start)
+        self._lap_start = time.time()
+        start_time_cnv = time.localtime(self._lap_start)
         return time.strftime('%Y/%m/%d %H:%M:%S', start_time_cnv)
 
     def lap_end(self):
-        self.lap_end = time.time()
-        end_time_cnv = time.localtime(self.lap_end)
+        self._lap_end = time.time()
+        end_time_cnv = time.localtime(self._lap_end)
         return time.strftime('%Y/%m/%d %H:%M:%S', end_time_cnv)
 
     def lap_time(self):
-        time_duration = datetime.timedelta(seconds=self.lap_end - self.lap_start)
+        time_duration = datetime.timedelta(seconds=self._lap_end - self._lap_start)
         return str(time_duration)
 
     def split_time(self):
         lap_temp = time.time()
-        time_duration = datetime.timedelta(seconds=lap_temp - self.start_time)
+        time_duration = datetime.timedelta(seconds=lap_temp - self._lap_start)
         return str(time_duration)
 
     def nowtime(self):

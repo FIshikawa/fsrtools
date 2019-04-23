@@ -112,7 +112,7 @@ def operate_simulations(param_dict_original,experiment_tag,log_write):
     param_dict = copy.deepcopy(param_dict_original)
     param_dict_original['experiment_params']['experiment_tag'] = experiment_tag 
     experiment_params = param_dict['experiment_params']
-    simulate_params = param_dict['simulate_params']
+    simulate_params_original = param_dict['simulate_params']
 
     experiment_directory = experiment_params['experiment_dir']
     log_write('[check experiment directory : {}]'.format(experiment_directory))
@@ -130,30 +130,24 @@ def operate_simulations(param_dict_original,experiment_tag,log_write):
 
     command_name = experiment_params['command_name']
 
-    simulate_params, iterate_dict , iterate_key_list, iterate_pair = set_simulate_params_iterate_dict(simulate_params,\
-                                                                                                      command_name,\
-                                                                                                      log_write)
+    simulate_params_original, total_combination = set_simulate_params_iterate_dict(simulate_params_original,log_write)
 
     simulate_number = 1
     commands_json = open(_commands_json_file())
     command_data = json.load(commands_json)
-    if(len(iterate_dict.keys()) != 0):
+    if(len(total_combination) > 0):
+        log_write('[total number of simulations : {}]'.format(len(total_combination)))
         log_write('[check iterate lists]')
-        log_write('[iterate_key_list] : {}'.format(iterate_key_list))
-        log_write('[iterate_pair length : {}]'.format(len(iterate_pair)))
-        log_write('[total number of simulations : {}]'.format(len(iterate_pair)))
-
-        for i in range(len(iterate_pair)):
-            simulate_params = set_simulate_params(simulate_params,iterate_key_list, iterate_pair[i], command_name)
-            log_write('[simulation : number-{}]'.format(simulate_number))
-            log_write.add_indent()
-            result_directory = os.path.join(simulate_directory,'number-' + str(simulate_number) + '/')
-            setting_manager.set_directory(result_directory)
-            execute_simulation(command_name,simulate_params,result_directory,log_write,command_data)
-            simulate_number += 1
-            log_write.decrease_indent()
+        log_write('[iterate combination list] : {}'.format(total_combination))
     else:
         log_write('[total number of simulations : 1]')
+        total_combination.append(['NO_ITERATION'])
+
+    for i in range(max(len(total_combination),1)):
+        if(len(total_combination) > 1):
+            simulate_params = set_simulate_params(simulate_params_original, total_combination[i])
+        else:
+            simulate_params = simulate_params_original 
         log_write('[simulation : number-{}]'.format(simulate_number))
         log_write.add_indent()
         result_directory = os.path.join(simulate_directory,'number-' + str(simulate_number) + '/')
@@ -225,158 +219,64 @@ def set_execute_command(command_name,simulate_params,log_write,command_data):
 def product_combination_generator(iterate_dict):
     total_length = 1 
     length_dict = {}
-    key_list = []
-    total_combination = []
+    combination_list = []
     if(len(iterate_dict.keys()) > 0):
         for key in iterate_dict.keys():
             length_dict[key] = len(iterate_dict[key])
             total_length = total_length * len(iterate_dict[key])
-        total_combination = [[] for x in range(total_length)]
-        previous_length = 1
-        for key, value in sorted(length_dict.items(), key=lambda x: x[1]):
-            key_list.append(key)
-            for i in range(previous_length):
-                for j in range(int(total_length/previous_length)):
-                    total_combination[ j + i * int(total_length / previous_length)].append(iterate_dict[key][int(j // (float(total_length / previous_length) / float(value)))])
-            previous_length = value
+        combination_list = [{} for x in range(total_length)]
+        repeat_length = total_length
+        previous_length = total_length
+        for key, length in sorted(length_dict.items(), key=lambda x: -x[1]):
+            repeat_length //= length
+            for i in range(total_length):
+                combination_list[i][key] = iterate_dict[key][ (i % previous_length) // repeat_length ]
+            previous_length = repeat_length
 
-    return key_list, total_combination
+    return combination_list 
 
 
-def set_simulate_params_iterate_dict(simulate_params,command_name,log_write):
+def set_simulate_params_iterate_dict(simulate_params,log_write):
+    simulate_params_temp = copy.deepcopy(simulate_params)
     iterate_dict = {}
     for key in simulate_params.keys():
         if(isinstance(simulate_params[key], list)):
             iterate_dict[key] = simulate_params[key]
-            log_write('[detect : {0} : {1}]'.format(key, simulate_params[key]))
-        elif(simulate_params[key] in ['Sweep','Power']):
-            iterate_dict[key] = []
-            log_write('[detect : {0} : {1}]'.format(key, simulate_params[key]))
-            log_write('[number of iteration : {}]'.format(simulate_params['N_' + key]))
-            if(simulate_params[key] == 'Sweep'):
-                for i in range(simulate_params['N_' + key]):
-                    iterate_dict[key].append(simulate_params[key+'_init'] + float(i) * simulate_params['d'+key])
-            elif(simulate_params[key] == 'Power'):
-                for i in range(simulate_params['N_' + key]):
-                    iterate_dict[key].append(np.power(simulate_params[key+'_init'],float(i+1)))
-                log_write('{}'.format(iterate_dict[key]))
-
-    if('clXYmodel' in command_name or 'clSpindemo' in command_name or 'fpu_thermalization' in command_name):
-        if('N_thermalize' in simulate_params.keys()):
-            if(simulate_params['N_thermalize'] == 'Auto'):
-                log_write('[detect : N_thermalize: Auto]')
-                if(not isinstance(simulate_params['Ns'],str) and not isinstance(simulate_params['Ns'],list)): 
-                    if(command_name.find('Cube') > 0):
-                        simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] 
-                    elif(command_name.find('Square') > 0):
-                        simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] 
-                    elif(command_name.find('Tesseract') > 0):
-                        simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] 
+            log_write('[list input : {0} : {1}]'.format(key, simulate_params[key]))
+        elif(isinstance(simulate_params[key], str)):
+            counter = 0
+            local_variable_dict = {}
+            for key_t in simulate_params.keys():
+                if(key_t in simulate_params[key]):
+                    if(isinstance(simulate_params[key_t], list) or isinstance(simulate_params[key_t],str)):
+                        counter += 1
                     else:
-                        simulate_params['N_thermalize'] =  simulate_params['Ns'] 
-                    log_write('[N_thermalize : {}]'.format(simulate_params['N_thermalize']))
-                elif(isinstance(simulate_params['Ns'],str) and isinstance(simulate_params['Ns'],list)): 
-                    log_write('[N_thermalize is set at simulation later]')
+                        local_variable_dict[key_t] = simulate_params[key_t]
+                        counter += 1
+            if(len(local_variable_dict) == counter):
+                simulate_params_temp[key] = eval(simulate_params[key],globals(),local_variable_dict)
+                log_write('[{0} : {1}]'.format(key, simulate_params[key]))
+            else:
+                for key_t in local_variable_dict.keys():
+                    log_write('{0} is set at execute command set : depend on changing {1}'.format(key,key_t))
 
-        if('Ns' in simulate_params.keys()):
-            if(simulate_params['Ns'] == 'Auto'):
-                log_write('[detect : N_thermalize: Auto]')
-                if(not isinstance(simulate_params['Ns'],str) and not isinstance(simulate_params['Ns'],list)): 
-                    if(command_name.find('Cube') > 0):
-                        simulate_params['Ns'] =  np.power(simulate_params['num_particles'],1/3)  
-                    elif(command_name.find('Square') > 0):
-                        simulate_params['Ns'] =  np.power(simulate_params['num_particles'],0.5)  
-                    elif(command_name.find('Tesseract') > 0):
-                        simulate_params['Ns'] =  np.power(simulate_params['num_particles'],1/4)  
-                    else:
-                        simulate_params['Ns'] =  simulate_params['num_particles']
-                    log_write('[Ns : {}]'.format(simulate_params['Ns']))
-                elif(isinstance(simulate_params['Ns'],str) and isinstance(simulate_params['Ns'],list)): 
-                    log_write('[Ns is set at simulation later]')
-
-        if('N_time' in simulate_params.keys()):
-            if(simulate_params['N_time'] == 'Auto'):
-                log_write('[detect : N_time : Auto]')
-                if(not isinstance(simulate_params['t'],str) and not isinstance(simulate_params['dt'],str)): 
-                    if(not isinstance(simulate_params['t'],list) and not isinstance(simulate_params['dt'],list)): 
-                        simulate_params['N_time'] =  int(simulate_params['t'] / simulate_params['dt'])
-                        log_write('[N_time : {}]'.format(simulate_params['N_time']))
-            elif(isinstance(simulate_params['N_time'],str)):
-                log_write('[N_time is set at simulation later]')
+    total_combination = product_combination_generator(iterate_dict)
+    return simulate_params_temp,  total_combination
 
 
-    elif(command_name.find('MPO') > -1):
-        if('N_time' in simulate_params.keys()):
-            if(simulate_params['N_time'] == 'Auto'):
-                log_write('[detect : N_time : Auto]')
-                if(not isinstance(simulate_params['t'],str) and not isinstance(simulate_params['dt'],str)): 
-                    if(not isinstance(simulate_params['t'],list) and not isinstance(simulate_params['dt'],list)): 
-                        simulate_params['N_time'] =  int(simulate_params['t'] / simulate_params['dt'])
-                        log_write('[N_time : {}]'.format(simulate_params['N_time']))
-            elif(isinstance(simulate_params['N_time'],str)):
-                log_write('[N_time is set at simulation later]')
-
-        if('D' in simulate_params.keys()):
-            if(simulate_params['D'] == 'Auto'):
-                log_write('[detect : {} : Auto]'.format('D'))
-                if(not isinstance(simulate_params['N'],str)):
-                    simulate_params['D'] = simulate_params['N'] * 2
-                    log_write('[D : {1}]'.format(key, simulate_params['D']))
-                elif(isinstance(simulate_params['N'],str)):
-                    log_write('[N will be set specially: set later]')
-
-        if('tagged' in simulate_params.keys()):
-            if(simulate_params['tagged'] == 'Auto'):
-                log_write('[detect : {} : Auto]'.format('tagged'))
-                if(not isinstance(simulate_params['N'],str)):
-                    if(not isinstance(simulate_params['N'],list)): 
-                     simulate_params['tagged'] = simulate_params['N'] // 2
-                    log_write('[tagged : {1}]'.format(key, simulate_params['tagged']))
-                elif(isinstance(simulate_params['N'],str)):
-                    log_write('[N will be set specially: set later]')
-
-    iterate_list, total_combination = product_combination_generator(iterate_dict)
-    return simulate_params, iterate_dict, iterate_list, total_combination
-
-
-def set_simulate_params(simulate_params,iterate_key_list,iterate_pair,command_name):
-    for i in range(len(iterate_key_list)):
-        simulate_params[iterate_key_list[i]] = iterate_pair[i]
-
-        if('clXYmodel' in command_name or 'clSpindemo' in command_name or 'fpu_thermalization' in command_name):
-            if( iterate_key_list[i] in ['Ns']):
-                if(command_name.find('Cube') > -1):
-                    simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] 
-                elif(command_name.find('Square') > 0):
-                    simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] 
-                elif(command_name.find('Tesseract') > 0):
-                    simulate_params['N_thermalize'] =  simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns'] * simulate_params['Ns']
-                else:
-                    simulate_params['N_thermalize'] =  simulate_params['Ns']
-                simulate_params['N_thermalize'] = int(simulate_params['N_thermalize']) 
-            if( iterate_key_list[i] in ['num_particles']):
-                if(command_name.find('Cube') > 0):
-                    simulate_params['Ns'] =  np.power(simulate_params['num_particles'],1/3)  
-                elif(command_name.find('Square') > 0):
-                    simulate_params['Ns'] =  np.power(simulate_params['num_particles'],0.5)  
-                elif(command_name.find('Tesseract') > 0):
-                    simulate_params['Ns'] =  np.power(simulate_params['num_particles'],1/4)  
-                else:
-                    simulate_params['Ns'] =  simulate_params['num_particles']
-                simulate_params['Ns'] =  int(simulate_params['Ns'])
-            if( iterate_key_list[i] in ['t','dt']):
-                simulate_params['N_time'] =  int(simulate_params['t'] / simulate_params['dt'])
-
-
-        elif(command_name.find('MPO') > -1):
-            if(iterate_key_list[i] == 'N'):
-                simulate_params[iterate_key_list[i]] = int(iterate_pair[i])
-                simulate_params['tagged'] = int(iterate_pair[i]) // 2
-                simulate_params['D'] = int(iterate_pair[i]) * 2
-            if( iterate_key_list[i] in ['t','dt']):
-                simulate_params['N_time'] =  int(simulate_params['t'] / simulate_params['dt'])
-
-    return simulate_params
+def set_simulate_params(simulate_params,iterate_pair):
+    for key in iterate_pair.keys():
+        simulate_params[key] = iterate_pair[key]
+    simulate_params_temp = copy.deepcopy(simulate_params)
+    for key in simulate_params.keys():
+        if(isinstance(simulate_params[key], str)):
+            local_variable_dict = {}
+            for key_t in simulate_params.keys():
+                if(key_t in simulate_params[key]):
+                    local_variable_dict[key_t] = simulate_params[key_t]
+            print(local_variable_dict)
+            simulate_params_temp[key] = eval(simulate_params[key],globals(),local_variable_dict)
+    return simulate_params_temp
 
 
 class CommandManager:
