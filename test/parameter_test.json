@@ -1,0 +1,13 @@
+{ 
+  "experiment_dir":"test/",
+  "experiments":{
+    "experiment_1":{
+      "experiment_params":{
+        "command_name":"hello_world"
+        },
+      "simulate_params":{
+        "N_loop":3
+        }
+    }
+  }
+}
