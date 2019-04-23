@@ -6,7 +6,18 @@
         "command_name":"hello_world"
         },
       "simulate_params":{
-        "N_loop":3
+        "N_loop":"Ns * 2",
+        "Ns":2
+        }
+    },
+    "experiment_2":{
+      "experiment_params":{
+        "command_name":"hello_world"
+        },
+      "simulate_params":{
+        "N_loop":"Ns * Nm",
+        "Ns":[1,2],
+        "Nm":3
         }
     }
   }
