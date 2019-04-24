@@ -15,6 +15,7 @@ def test_CommandManager():
     for key in list(set(files_list_created) - set(files_list)):
         os.remove(os.path.join('./test',key))
 
+
 def test_product_combination_generator_case_1():
     iterate_dict = {'Na':[1,2,3,4],'Nb':[5,6,7],'Nc':[8,9]}
     combination_list = fsrsimulate.product_combination_generator(iterate_dict)
@@ -29,6 +30,7 @@ def test_product_combination_generator_case_1():
                 if(counter == 3):
                     print('{0} : {1} : {2}'.format(i,j,combination_list[i]))
                 assert counter < 3
+
 
 def test_product_combination_generator_case_2():
     iterate_dict = {'Na':[1,2,3],'Nb':[4,5,6],'Nc':[7,8]}
@@ -45,17 +47,19 @@ def test_product_combination_generator_case_2():
                     print('{0} : {1} : {2}'.format(i,j,combination_list[i]))
                 assert counter < 3
 
+
 def test_set_simulate_params_iterate_dict_case_1():
     simulate_params = {'Ns':2,"N_time":'Ns*2'}
     print_temp = lambda sentence : print(sentence)
-    simulate_params, total_combination = fsrsimulate.set_simulate_params_iterate_dict(simulate_params,print_temp)
+    simulate_params, total_combination = fsrsimulate.set_total_combinations(simulate_params,print_temp)
     assert simulate_params['N_time'] == 4
     assert len(total_combination) == 0
+
 
 def test_set_simulate_params_iterate_dict_case_2():
     simulate_params = {'Nm':[1,2],'Ns':[2,3],'N_time':'Ns*Nm'}
     print_temp = lambda sentence : print(sentence)
-    simulate_params, total_combination = fsrsimulate.set_simulate_params_iterate_dict(simulate_params,print_temp)
+    simulate_params, total_combination = fsrsimulate.set_total_combinations(simulate_params,print_temp)
     answer_dict = [{} for x in range(4)]
     counter = 0
     for value in simulate_params['Nm']:
@@ -66,14 +70,16 @@ def test_set_simulate_params_iterate_dict_case_2():
     for i in range(len(total_combination)):
         assert total_combination[i] == answer_dict[i]
 
+
 def test_set_simulate_params():
     simulate_params = {'Nm':[1,2],'Ns':2,'N_time':'Ns*Nm'}
     print_temp = lambda sentence : print(sentence)
-    simulate_params_original, total_combination = fsrsimulate.set_simulate_params_iterate_dict(simulate_params,print_temp)
+    simulate_params_original, total_combination = fsrsimulate.set_total_combinations(simulate_params,print_temp)
     for i, pair in enumerate(total_combination):
         simulate_params_temp = fsrsimulate.set_simulate_params(simulate_params_original,pair)
         print(simulate_params_temp)
         assert simulate_params_temp['N_time'] == simulate_params['Nm'][i] * simulate_params['Ns']
+
 
 def test_operate_experiments():
     files_list = os.listdir('./test/')
@@ -95,3 +101,24 @@ def test_operate_experiments():
         except OSError as now_error:
             shutil.rmtree(os.path.join('./test',key))
 
+
+def test_log_check():
+    files_list = os.listdir('./test/')
+    command_manager = fsrsimulate.CommandManager()
+    if('hello_world' in command_manager.command_name_list):
+        command_manager.remove_command('hello_world')
+    command_manager.add_command({'hello_world' : ['python','./test/hello_world.py','N_loop']})
+    command_manager.save()
+    log_file = 'log.dat'
+    parameter_json = 'test/parameter_test.json'
+    fsrsimulate.operate_experiments(parameter_file=parameter_json,log_file=log_file,test_mode=True)
+    command_manager.remove_command('hello_world')
+    command_manager.save()
+    fsrsimulate.log_check('./test')
+    files_list_created = os.listdir('./test/')
+    for key in list(set(files_list_created) - set(files_list)):
+        try:
+            os.remove(os.path.join('./test',key))
+        except OSError as now_error:
+            shutil.rmtree(os.path.join('./test',key))
+ 
