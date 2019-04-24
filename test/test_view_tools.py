@@ -40,15 +40,17 @@ def set_data_for_test():
             shutil.rmtree(os.path.join('./test',key))
 
 
-def test_set_result_info(set_data_for_test):
+def test_set_data_map(set_data_for_test):
     top_directory = ''
     with os.scandir('./test') as files:
         for entry in files:
             if '-' in entry.name and entry.is_dir():
                 top_directory = entry.name
                 break
+    top_directory = os.path.join('./test',top_directory)
     print(top_directory)
-    plot_manager = fsrview.PlotManager(top_directory=top_directory)
-    plot_manager.result_info(whole_info=True)
+    config_data_map, result_data_map = fsrview.set_data_map(top_directory)
+    print(config_data_map)
+    print(result_data_map)
 
 
