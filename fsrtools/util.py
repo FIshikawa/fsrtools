@@ -2,6 +2,7 @@ import json
 import datetime
 import time 
 import os
+import sys
 
 
 class LogManager:
@@ -29,8 +30,9 @@ class LogManager:
     def __init__(self,indent=0,log_file=None,cout_tag=False):
         if(cout_tag is False and log_file is None):
             raise ValueError('log_file is defined nesessarily when cout_tag is False.')
-        if(os.path.exists(log_file)):
-            os.remove(log_file)
+        if(log_file is not None):
+            if(os.path.exists(log_file)):
+                os.remove(log_file)
         self.log_file = log_file
         self.indent = indent
         self.cout_tag = cout_tag
@@ -43,11 +45,13 @@ class LogManager:
 
     def reset_indent(self):
         self.indent = 0
+
     def add_indent(self):
         self.indent += 1
+
     def decrease_indent(self):
         self.indent -= 1
-    
+
     def __call__(self,sentence,log_file_temp=None):
         sentence = self.__indent() + sentence
         if(log_file_temp is None and self.log_file is not None):
@@ -60,6 +64,24 @@ class LogManager:
             f.close()
         if(self.cout_tag):
             print(sentence)
+
+    def progress_bar(self,loop,loop_max,add_sentence=None,indent=0):
+        sys.stdout.write('\r')
+        sentence = ''
+        if(indent > 0):
+            for i in range(indent):
+                sentence += '  ' 
+        else:
+            for i in range(self.indent):
+                sentence += '  ' 
+        progress_ratio = int(float(loop+1)/float(loop_max)*100)
+        sentence += '[Progress : {0:0=3}%]'.format(progress_ratio)
+        if(add_sentence != None):
+            sentence += add_sentence
+        sys.stdout.write(sentence)
+        sys.stdout.flush()
+        if(progress_ratio >= 100):
+            sys.stdout.write('\n')
 
 
 class StopWatch:
@@ -181,6 +203,7 @@ def colors(color):
 
 def color_print(sentence,color):
     print(colors(color) + sentence + colors('END'))
+
 
 
 
