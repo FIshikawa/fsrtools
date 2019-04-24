@@ -111,7 +111,7 @@ def set_data_for_test():
         command_manager.remove_command('hello_world')
     command_manager.add_command({'hello_world' : ['python','./test/hello_world.py','N_loop']})
     command_manager.save()
-    pytest.log_file = 'log.dat'
+    pytest.log_file = 'test/log.dat'
     pytest.parameter_json = 'test/parameter_test.json'
     pytest.command_data = command_manager.command_data
     yield set_data_for_test
