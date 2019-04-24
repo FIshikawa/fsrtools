@@ -11,193 +11,71 @@ from mpl_toolkits.mplot3d import axes3d
 from scipy import stats
 import math
 import numpy as np
+from fsrtools.util import LogManager
 
 class PlotManager:
     def __init__(self,top_directory=None,file_name=None):
-        self.__plot_kind = ['hist','correlation', 'normal','totally']
+        self._plot_kind = ['hist','correlation', 'normal','totally']
         self.ax = {}
         self.fig = {}
-        self.__plot_type = {}
-        for key in self.__plot_kind:
+        self._plot_type = {}
+        for key in self._plot_kind:
             self.ax[key] = {}
-            self.__plot_type[key] = []
+            self._plot_type[key] = []
         self.basic_size = {'window_large':20,'window_small':8,'font':20}
-        self.__result_whole_info = ''
-        self.__result_info = ''
-        self.__data_dir_list = []
-        self.__variable_params = []
-        self.__num_patterns_with_variable_params = []
-        self.__common_params = []
-        self.__indent = 0
-        self.__label = ''
-        self.__buffer_data = {}
-        self.__top_directory = top_directory
+        self._config_data_map= []
+        self._label = ''
+        self._buffer_data = {}
+        self._top_directory = top_directory
+        self._result_data_map = []
+        self._myprint = LogManager(cout_tag=True)
 
-        if(top_directory != None):
-            self.__set_result_info(top_directory)
-        if(file_name != None):
+        if(top_directory is not None):
+            self._config_data_map, self._result_data_map  = set_data_map(top_directory)
+        if(file_name is not None):
             file_in_dir_name = os.path.dirname(file_name)
-            self.__set_result_info(file_in_dir_name)
+            self._config_data_map, self._result_data_map  = set_data_map(top_directory)
 
-
-    def __set_result_info(self,top_directory):
-        sentence = '  [results whole info] \n' 
-        result_list = []
-        experiment_date= []
-        previous_dir = ''
-        indent = 0
-        previous_length = 0
-
-        if(len(top_directory) < 1):
-            sentence += '    [not find particular structure : instant plot mode]\n'
-            self.__result_whole_info = sentence
-            sentence = '  [results with params] '
-            self.__result_info = sentence
-
+    def result_info(self,whole_info=False):
+        if(whole_info):
+            print('not implemented')
         else:
-            top_len = len([x for x in top_directory.split('/') if(len(x) > 0)])
-            counter = 0
-            variable_params = []
-            common_params = []
-            current_dir_list = []
+            for i, element in emumerate(self._config_data_map):
+                print('[experiment date: {}]'.format(element['date']))
+                print('[common parameters]] : {}'.format(element))
 
-            for current_dir, included_dir, files in os.walk(top_directory):
-                current_dir_list = current_dir.split('/') 
-                indent = len(current_dir_list)
-
-                if(len(included_dir) < 1 and len([x for x in files if 'result' in x]) > 0):
-                    counter += 1
-                    sentence += '[{}]'.format(counter) 
-                    if(counter > 0): 
-                        for i in range(indent-top_len - int(math.log10(counter)) - 1): # log10 is for length of output
-                            sentence += '  '
-                    self.__data_dir_list.append('{}'.format(current_dir))
-                else:
-                    for i in range(indent-top_len ):
-                        sentence += '  '
-                sentence = sentence + '[{}]'.format(current_dir) + '\n'
-
-                if('experiment_' in current_dir_list[-1]):
-                    indent_t = ''
-                    for i in range(indent-top_len + 1):
-                        indent_t += '  '
-                    json_file = open(os.path.join(current_dir,'parameter.json'),'r')
-                    json_data = json.load(json_file)
-                    experiment_date.append(current_dir_list[-2])
-                    self.__num_patterns_with_variable_params.append(0)
-                    self.__variable_params.append({})
-                    self.__common_params.append({})
-                    self.__common_params[-1]['command_name'] = json_data['experiment_params']['command_name']
-                    for key in json_data['simulate_params'].keys():
-                        if(not 'dir' in key and not 'time_info' in key):
-                            if(isinstance(json_data['simulate_params'][key], list)):
-                                self.__variable_params[-1][key] = []
-                            else:
-                                self.__common_params[-1][key] = json_data['simulate_params'][key]
-                    sentence += indent_t + '[common parameter]'
-                    sentence += '\n' + indent_t + '  command_name : {}'.format(self.__common_params[-1]['command_name']) 
-                    for key in self.__common_params[-1]:
-                        sentence = sentence + '\n' + indent_t + '  {0} : {1}'.format(key,self.__common_params[-1][key])
-                    sentence += '\n' + indent_t + '[varibale parameter]'
-                    for key in self.__variable_params[-1].keys():
-                        sentence += '\n' + indent_t + '  ' +  key  
-                    sentence += '\n'
-
-                if(len(included_dir) < 1):
-                    garbage = []
-                    json_file_name = ''
-                    for key in files:
-                        if('parameter.json' in key):
-                            json_file_name = key
-                        if('results' in key):
-                            garbage.append(key)
-                    for key in garbage:
-                        files.remove(key)
-                    for i in range(indent-top_len):
-                        sentence += '  '
-
-                    if(len(files) < 1):
-                        sentence = sentence + '  No Result Files \n'
-                    elif(len(json_file_name) < 1):
-                        sentence = sentence + '  No parameter file \n'
-                    else:
-                        json_file = open(os.path.join(current_dir,json_file_name),'r')
-                        json_data = json.load(json_file)
-                        result_list.append(files)
-                        sentence = sentence + '  {}'.format(files) + '\n'
-                        indent_t = ''
-                        for i in range(indent-top_len+1):
-                            indent_t += '  '
-                        if(len(self.__variable_params) > 0):
-                            sentence += indent_t + '  [variable parameters]'
-                            for key in self.__variable_params[-1].keys():
-                                sentence = sentence +  '  {0} : {1}  '.format(key,json_data[key]) 
-                                self.__variable_params[-1][key].append(json_data[key])
-                            self.__num_patterns_with_variable_params[-1] += 1
-                        else:
-                            sentence += indent_t + '  [parameters]'
-                            for key in json_data.keys():
-                                sentence = sentence +  '  {0} : {1}  '.format(key,json_data[key]) 
-                        sentence += '\n'
-            self.__result_whole_info = sentence
-
-            sentence = '  [results with params] '
-            if(len(self.__common_params[:]) > 0):
-                counter = 1
-                for i in range(len(self.__common_params[:])):
-                    sentence += '\n    [experiment_{0}] [date : {1}] \n      [common params]  '.format(i+1,experiment_date[i])
-                    for key in self.__common_params[i].keys():
-                        sentence += key + ' : {}, '.format(self.__common_params[i][key])
-                    for j in range(self.__num_patterns_with_variable_params[i]):
-                        sentence += '\n        [{}] '.format(counter)
-                        for key in self.__variable_params[i].keys():
-                            sentence += key + ' : {}, '.format(self.__variable_params[i][key][j]) 
-                        sentence += ' {}'.format(result_list[counter-1])
-                        counter += 1
-            elif(len(json_file_name) < 1):
-                sentence += '\n    [parameters] [no data : cannot find parameter file]' 
-                sentence += '\n    [result files] : {}'.format(files)
-            else:
-                sentence += '\n    [parameters] [date : {}]'.format(current_dir_list[-3])
-                for key in json_data.keys():
-                    sentence = sentence +  '\n      {0} : {1}  '.format(key,json_data[key]) 
-                sentence += '\n    [result files] : {}'.format(files)
-            self.__result_info = sentence
-
-
-    def __directory_name_set(self,file,directory):
+    def _directory_name_set(self,file,directory):
         directory_name = ''
         if(isinstance(file, str)):
             if('/' in file):
                 directory_name = os.path.dirname(file)
         if(directory != None):
             if(isinstance(directory, int)): 
-                directory_name = self.__data_dir_list[directory-1]
+                directory_name = self._data_dir_list[directory-1]
             elif(isinstance(directory, str)): 
                 directory_name = directory
         else:
-            if(len(self.__data_dir_list) != 1):
-                self.__myprint('[No directory name : instant plot]')
+            if(len(self._data_dir_list) != 1):
+                self._myprint('[No directory name : instant plot]')
             else:
-                directory_name = self.__data_dir_list[0]
-                self.__myprint('[Automatically set directory : {}]'.format(directory_name))
+                directory_name = self._data_dir_list[0]
+                self._myprint('[Automatically set directory : {}]'.format(directory_name))
         return directory_name
 
-
-    def __file_path_set(self,file,directory):
+    def _file_path_set(self,file,directory):
         file_path = ''
         if('/' in file):
             directory_name = os.path.dirname(file)
         else:
-            directory_name = self.__directory_name_set(file,directory)
+            directory_name = self._directory_name_set(file,directory)
             file_path = os.path.join(directory_name, file)
-            self.__myprint('[directory set : {}]'.format(directory_name))
+            self._myprint('[directory set : {}]'.format(directory_name))
             file_in_dir_name = directory_name
-        self.__myprint('[full path of target : {}]'.format(file_path))
+        self._myprint('[full path of target : {}]'.format(file_path))
         return file_path 
 
 
-    def __check_json_file(self,directory_name):
+    def _check_json_file(self,directory_name):
         json_file_name = ''
         files_in_dir = os.listdir(directory_name)
         for key in files_in_dir:
@@ -205,39 +83,39 @@ class PlotManager:
                 json_file_name = key 
                 break
         if(len(json_file_name) < 1):
-            self.__myprint('[cannot find parameter file : unset parameter file mode]')
+            self._myprint('[cannot find parameter file : unset parameter file mode]')
         else:
             json_file_name =  os.path.join(directory_name,json_file_name)
-            self.__myprint('[read parameter : {}]'.format(json_file_name))
+            self._myprint('[read parameter : {}]'.format(json_file_name))
             json_file = open(json_file_name,'r')
             json_data = json.load(json_file)
-            self.__myprint('[parameters in this simulation]')
+            self._myprint('[parameters in this simulation]')
             for key in json_data.keys():
-                self.__myprint('  [{0} : {1} ]'.format(key,json_data[key]))
+                self._myprint('  [{0} : {1} ]'.format(key,json_data[key]))
             return json_data
 
 
-    def __data_load(self,file_path,plot_kind):
+    def _data_load(self,file_path,plot_kind):
         type_dict = {}
-        if(not file_path in self.__buffer_data.keys()):
+        if(not file_path in self._buffer_data.keys()):
             data = {}
             if(plot_kind == None):
-                self.__myprint('[plot_kind is not input : automatically set]')
-                for key in self.__plot_kind:
+                self._myprint('[plot_kind is not input : automatically set]')
+                for key in self._plot_kind:
                     if(key in file_path):
                         plot_kind = key
-                        self.__myprint('[set plot_kind {} : {} in the result file name]'.format(plot_kind,plot_kind))
+                        self._myprint('[set plot_kind {} : {} in the result file name]'.format(plot_kind,plot_kind))
                 if(plot_kind == None):
                     if('_' in os.path.basename(file_path)):
-                        self.__myprint('[detect "_" but cannot find particular case.]')
-                    self.__myprint('[normal plot data]')
+                        self._myprint('[detect "_" but cannot find particular case.]')
+                    self._myprint('[normal plot data]')
                     plot_kind = 'normal'
             else:
-                if(not plot_kind in self.__plot_kind):
-                    self.__myprint('[Error! : input plot_kind is not in our set]')
+                if(not plot_kind in self._plot_kind):
+                    self._myprint('[Error! : input plot_kind is not in our set]')
                     sys.exit()
                 else:
-                    self.__myprint('[input plot_kind : {}]'.format(plot_kind))
+                    self._myprint('[input plot_kind : {}]'.format(plot_kind))
 
             if(plot_kind == 'normal'):
                 type_dict = {'ACF_list' : [],
@@ -345,23 +223,23 @@ class PlotManager:
                     data[key] = data_t[:,value_keys.index(key)]
                     type_dict['y_list'].append(key)
 
-            self.__buffer_data[file_path] = {}
-            self.__buffer_data[file_path]['data']      = copy.deepcopy(data)
-            self.__buffer_data[file_path]['type_dict'] = copy.deepcopy(type_dict)
-            self.__buffer_data[file_path]['plot_kind'] = copy.deepcopy(plot_kind)
+            self._buffer_data[file_path] = {}
+            self._buffer_data[file_path]['data']      = copy.deepcopy(data)
+            self._buffer_data[file_path]['type_dict'] = copy.deepcopy(type_dict)
+            self._buffer_data[file_path]['plot_kind'] = copy.deepcopy(plot_kind)
 
         else:
-            self.__myprint('[data is already bufferd]')
-            data      = copy.deepcopy(self.__buffer_data[file_path]['data'])
-            type_dict = copy.deepcopy(self.__buffer_data[file_path]['type_dict'])
-            plot_kind = copy.deepcopy(self.__buffer_data[file_path]['plot_kind'])
+            self._myprint('[data is already bufferd]')
+            data      = copy.deepcopy(self._buffer_data[file_path]['data'])
+            type_dict = copy.deepcopy(self._buffer_data[file_path]['type_dict'])
+            plot_kind = copy.deepcopy(self._buffer_data[file_path]['plot_kind'])
 
         return data, type_dict, plot_kind
 
 
-    def __set_fig_ax(self,type_dict,plot_kind,plot_value,directory):
-        self.__myprint('[set fig and ax]')
-        self.__add_indent()
+    def _set_fig_ax(self,type_dict,plot_kind,plot_value,directory):
+        self._myprint('[set fig and ax]')
+        self._add_indent()
         total_number_of_plot = 0
         if(plot_value == None and plot_kind != 'totally'):
             self.fig[plot_kind] = plt.figure(figsize=(self.basic_size['window_large']*1.618,self.basic_size['window_large']))
@@ -376,7 +254,7 @@ class PlotManager:
             elif(plot_kind == 'totally'):
                 total_number_of_plot = 1
 
-            self.__myprint('[total number of plot : {}]'.format(total_number_of_plot))
+            self._myprint('[total number of plot : {}]'.format(total_number_of_plot))
             if(total_number_of_plot != 1):
                 if((total_number_of_plot % 3) == 0):
                     vertical_length = 3
@@ -412,8 +290,8 @@ class PlotManager:
             self.fig[plot_kind], self.ax[plot_kind][plot_value] = plt.subplots(figsize=(self.basic_size['window_small']*1.618*1.5,self.basic_size['window_small']*1.5))
 
         else:
-            self.__myprint('[plot_value is input : {}]'.format(plot_value))
-            self.__myprint('[plot_kind  is input : {}]'.format(plot_kind))
+            self._myprint('[plot_value is input : {}]'.format(plot_value))
+            self._myprint('[plot_kind  is input : {}]'.format(plot_kind))
             check_list = []
             if(plot_kind == 'normal'):
                 check_list.extend([x for x in type_dict.keys() if x != 'Energy_list' and x != 'x_axis']) 
@@ -422,14 +300,14 @@ class PlotManager:
 
             for key in check_list:
                 if(plot_value in type_dict[key]): 
-                    self.__myprint('[detect : plot_value in : {}]'.format(key))
+                    self._myprint('[detect : plot_value in : {}]'.format(key))
                     key_t = key
                     del type_dict[key][:]
                     type_dict[key].append(plot_value)
                     if(plot_value in self.ax[plot_kind].keys()):
-                      self.__myprint('[{} is already set in {} plots : added into target plot]'.format(plot_value,plot_kind))
+                      self._myprint('[{} is already set in {} plots : added into target plot]'.format(plot_value,plot_kind))
                     else:
-                      self.__myprint('[plot_value is not in axes keys : create]')
+                      self._myprint('[plot_value is not in axes keys : create]')
                       self.fig[plot_kind], self.ax[plot_kind][plot_value] = plt.subplots(figsize=(self.basic_size['window_small']*1.618,self.basic_size['window_small']))
                 else:
                     del type_dict[key][:]
@@ -437,32 +315,32 @@ class PlotManager:
             if(plot_kind == 'normal'):
                 if(plot_value == 'Energy_totally_plot'):
                     if(plot_value in self.ax[plot_kind].keys()):
-                        self.__myprint('[{} is already set in {} plots : added into target plot]'.format(plot_value,plot_kind))
+                        self._myprint('[{} is already set in {} plots : added into target plot]'.format(plot_value,plot_kind))
                     else:
-                        self.__myprint('[plot_value is not in axes keys : create]')
+                        self._myprint('[plot_value is not in axes keys : create]')
                         self.fig[plot_kind], self.ax[plot_kind][plot_value] = plt.subplots(figsize=(self.basic_size['window_small']*1.618,self.basic_size['window_small']))
                 else:
                     del type_dict['Energy_list'][:]
 
 
             if(len([x for x in check_list if len(type_dict[x]) > 0]) < 1):
-                self.__myprint('[Error! plot_value is not in {} plots]'.format(plot_kind))
+                self._myprint('[Error! plot_value is not in {} plots]'.format(plot_kind))
                 sys.exit()
             else:
                 if(isinstance(directory, int)): 
                     directory_t = 0
-                    for i in range(len(self.__common_params)):
-                        for j in range(self.__num_patterns_with_variable_params[i]):
+                    for i in range(len(self._common_params)):
+                        for j in range(self._num_patterns_with_variable_params[i]):
                             directory_t += 1
                             if(directory == directory_t):
-                                for key in self.__variable_params[i].keys():
-                                    self.__label = '{0} : {1}, '.format(key, self.__variable_params[i][key][j])
+                                for key in self._variable_params[i].keys():
+                                    self._label = '{0} : {1}, '.format(key, self._variable_params[i][key][j])
                                 break
                         else:
                             continue
                         break
 
-        self.__decrease_indent()
+        self._decrease_indent()
 
 
     def plot_data(self,data=None,data_x=None,data_y=None,data_z=None,y_error=None,ptype=None,x_axis=None,y_axis=None,z_axis=None,label=None,title=None,addplot=None,x_lim=None,y_lim=None,marker=None):
@@ -470,7 +348,7 @@ class PlotManager:
             plot_kind = addplot[0]
             value_name = addplot[1]
             if(not plot_kind in self.fig.keys() or not value_name in self.ax[plot_kind].keys()):
-                self.__myprint('[Error!! : add target does not exist!!]')
+                self._myprint('[Error!! : add target does not exist!!]')
         else:
             plot_kind= 'temporary'
             value_name = 'temporary'
@@ -484,26 +362,26 @@ class PlotManager:
             if(not plot_kind in self.fig.keys() or not value_name in self.ax[plot_kind].keys()):
                 self.ax[plot_kind] = {}
                 self.fig[plot_kind], self.ax[plot_kind][value_name] = plt.subplots(figsize=(self.basic_size['window_small']*1.618,self.basic_size['window_small']))
-                self.__myprint('[Remark : fig and ax key of plot_data is "temporary", You can overlay some graph on same window which is identified by the key "temporary"]')
+                self._myprint('[Remark : fig and ax key of plot_data is "temporary", You can overlay some graph on same window which is identified by the key "temporary"]')
         else:
             if((len([x for x in axis_list if x != None]) + (1 if title != None else 0)) < 1 and len([x for x in data_list if x != None]) > 0): 
-                self.__myprint('[Error!! : ptype must be chosen from "2d" or "3d"]')
+                self._myprint('[Error!! : ptype must be chosen from "2d" or "3d"]')
                 sys.exit()
 
         if(data == None and ptype != None):
-            self.__plot_2d(self.ax[plot_kind][value_name],data_x,data_y,y_error=y_error,label=label,marker=marker)
+            self._plot_2d(self.ax[plot_kind][value_name],data_x,data_y,y_error=y_error,label=label,marker=marker)
 
         elif(isinstance(data,dict) and ptype != None):
             for i in range(4):
                 if(data_list[i] != None):
                     if(not isinstance(data_list[i],str)):
-                        self.__myprint('[Error! : data_xyz, y_error shold be str]') 
+                        self._myprint('[Error! : data_xyz, y_error shold be str]') 
                         sys.exit()
                     else:
                         if(data_list[i] in data.keys()):
                             data_dict[i] = data[data_list[i]]
                         else:
-                            self.__myprint('[Error! : {} is not in data]'.format(data_list[i])) 
+                            self._myprint('[Error! : {} is not in data]'.format(data_list[i])) 
                             sys.exit()
                 else:
                     data_dict[i] = None
@@ -513,7 +391,7 @@ class PlotManager:
             if(axis_list[1] == None):
                 self.ax[plot_kind][value_name].set_ylabel(data_list[1])
 
-            self.__plot_2d(self.ax[plot_kind][value_name],data_dict[0],data_dict[1],y_error=data_dict[3],label=label,marker=marker)
+            self._plot_2d(self.ax[plot_kind][value_name],data_dict[0],data_dict[1],y_error=data_dict[3],label=label,marker=marker)
 
         if(x_lim != None):
             if(isinstance(x_lim,dict)):
@@ -531,7 +409,7 @@ class PlotManager:
 
         for key in [x for x in axis_list if x != None]:
             if(not isinstance(key,str)):
-                self.__myprint('[Error! : xyz_axis shold be str]') 
+                self._myprint('[Error! : xyz_axis shold be str]') 
             else:
                 if(axis_list.index(key) == 0):
                     self.ax[plot_kind][value_name].set_xlabel(key)
@@ -542,73 +420,73 @@ class PlotManager:
 
 
     def plot_result(self,file=None,directory=None,plot_kind=None,plot_value=None,save_fig=False,log_scale=False):
-        self.__init_indent()
+        self._init_indent()
         if(file is None and directory is None):
-            self.__myprint('[error!! cannot decide plot files : select number dir or result file]')
+            self._myprint('[error!! cannot decide plot files : select number dir or result file]')
             raise ValueError
         directory_name = ''
-        directory_name = self.__directory_name_set(file,directory)
+        directory_name = self._directory_name_set(file,directory)
         if(len(directory_name) < 1):
-            self.__myprint('[instant plot mode]')
+            self._myprint('[instant plot mode]')
         elif('experience' in directory_name.split('/')[-2]):
-            self.__myprint('[detect phrase "experience" : result files not in ]')
+            self._myprint('[detect phrase "experience" : result files not in ]')
             sys.exit()
         elif('number' in directory_name.split('/')[-2] and file == None):
-            self.__myprint('[detect phrase "number" : plot all results here]')
+            self._myprint('[detect phrase "number" : plot all results here]')
 
         if(file != None):
-            self.__myprint('[file plot mode]')
-            self.__myprint('[file name : {}]'.format(file))
+            self._myprint('[file plot mode]')
+            self._myprint('[file name : {}]'.format(file))
             file_path = ''
-            file_path = self.__file_path_set(file,directory)
+            file_path = self._file_path_set(file,directory)
             if(not os.path.exists(file_path)):
-                self.__myprint('[Error! : {} does not exist]'.format(file)) 
+                self._myprint('[Error! : {} does not exist]'.format(file)) 
                 sys.exit()
 
         if(len(directory_name) < 1):
-            self.__myprint('[instant plot mode : no parameter.json]')
+            self._myprint('[instant plot mode : no parameter.json]')
             json_data = None
         else:
             files_in_dir = os.listdir(directory_name)
-            self.__myprint('[check files in the directory]')
-            self.__myprint(files_in_dir)
-            json_data = self.__check_json_file(directory_name)
+            self._myprint('[check files in the directory]')
+            self._myprint(files_in_dir)
+            json_data = self._check_json_file(directory_name)
             waste_files = []
             for key in files_in_dir[:]:
                 if(not 'result' in key):
                     files_in_dir.remove(key)
-            self.__myprint('[start ploting]')
+            self._myprint('[start ploting]')
 
         if(directory != None and file == None):
-            self.__myprint('[plot only "result" files such as]')
-            self.__add_indent()
-            self.__myprint('  {}'.format(files_in_dir))
-            self.__decrease_indent()
-            self.__add_indent()
+            self._myprint('[plot only "result" files such as]')
+            self._add_indent()
+            self._myprint('  {}'.format(files_in_dir))
+            self._decrease_indent()
+            self._add_indent()
             for key in files_in_dir:
-                self.__plot_file(os.path.join(directory_name,key),directory,json_data,plot_kind=plot_kind,plot_value=plot_value,log_scale=log_scale)
+                self._plot_file(os.path.join(directory_name,key),directory,json_data,plot_kind=plot_kind,plot_value=plot_value,log_scale=log_scale)
                 if(save_fig):
                     fig_name = os.path.join(directory_name, key.split('.')[0] + '.pdf')
-                    self.__myprint('[save figure : {}]'.format(fig_name))
+                    self._myprint('[save figure : {}]'.format(fig_name))
                     plt.savefig(fig_name,format='pdf')
 
         else:
-            self.__add_indent()
+            self._add_indent()
             if(json_data is None and plot_kind is None):
                 plot_kind = 'totally' 
-                self.__myprint('[no input plot_kind : plot_kind set as "totally" automatically]')
-            self.__plot_file(file_path,directory,json_data,plot_kind=plot_kind,plot_value=plot_value,log_scale=log_scale)  
+                self._myprint('[no input plot_kind : plot_kind set as "totally" automatically]')
+            self._plot_file(file_path,directory,json_data,plot_kind=plot_kind,plot_value=plot_value,log_scale=log_scale)  
             if(save_fig):
                 fig_name = os.path.basename(file_path)
                 fig_name = os.path.join(directory_name,fig_name.split('.')[0] + '.pdf')
-                self.__myprint('[save figure : {}]'.format(fig_name))
+                self._myprint('[save figure : {}]'.format(fig_name))
                 plt.savefig(fig_name,format='pdf')
 
 
-        self.__decrease_indent()
-        self.__myprint('[plot completed]')
+        self._decrease_indent()
+        self._myprint('[plot completed]')
 
-    def __plot_file(self,file_path,directory,params_dict=None,legend_str=None,plot_kind=None,plot_value=None,log_scale=False):
+    def _plot_file(self,file_path,directory,params_dict=None,legend_str=None,plot_kind=None,plot_value=None,log_scale=False):
         plt.rcParams["font.size"] = self.basic_size['font']
         if(params_dict != None):
             if('T' in params_dict.keys()):
@@ -620,69 +498,69 @@ class PlotManager:
             if('N_time_resolve' in params_dict.keys()):
                 N_time_resolve = params_dict['N_time_resolve']
 
-        data, type_dict, plot_kind = self.__data_load(file_path,plot_kind)
+        data, type_dict, plot_kind = self._data_load(file_path,plot_kind)
 
-        self.__add_indent()
+        self._add_indent()
         for key in type_dict.keys():
-            self.__myprint('[{0}] : {1}'.format(key,type_dict[key]))
-        self.__decrease_indent()
+            self._myprint('[{0}] : {1}'.format(key,type_dict[key]))
+        self._decrease_indent()
 
         if(plot_kind == 'hist'):
-            self.__myprint('[hist plot]')
-            del self.__plot_type[plot_kind][:]
-            self.__add_indent()
-            self.__set_fig_ax(type_dict,plot_kind,plot_value,directory)
+            self._myprint('[hist plot]')
+            del self._plot_type[plot_kind][:]
+            self._add_indent()
+            self._set_fig_ax(type_dict,plot_kind,plot_value,directory)
 
             for key in type_dict['2d_plot']:
                 for value_name in type_dict['values']:
                     if(value_name in key):
-                        self.__myprint('[plot : {}]'.format(key))
-                        self.__add_indent()
-                        self.__plot_type[plot_kind].append(key)
+                        self._myprint('[plot : {}]'.format(key))
+                        self._add_indent()
+                        self._plot_type[plot_kind].append(key)
                         if('head' in key or 'tail' in key):
                             axis_num = (0 if 'head' in key else -1)
-                            self.__genuine_hist_plot(data[value_name]['range'][:,axis_num],data[value_name]['hist'][:,axis_num],self.ax[plot_kind][key])
-                            self.__process_hist_plot(data[value_name]['range'][:,axis_num],data[value_name]['hist'][:,axis_num],self.ax[plot_kind][key])
+                            self._genuine_hist_plot(data[value_name]['range'][:,axis_num],data[value_name]['hist'][:,axis_num],self.ax[plot_kind][key])
+                            self._process_hist_plot(data[value_name]['range'][:,axis_num],data[value_name]['hist'][:,axis_num],self.ax[plot_kind][key])
                             if('Velocity' in key):
                                 if(type_dict['y_axis'] in ['T','Temperture','temperture']):
                                     if('head' in key):
-                                        self.__exact_gaussian_plot(data[value_name]['range'][:,axis_num],data[value_name]['hist'][:,axis_num],self.ax[plot_kind][key],data[type_dict['y_axis']][0])
+                                        self._exact_gaussian_plot(data[value_name]['range'][:,axis_num],data[value_name]['hist'][:,axis_num],self.ax[plot_kind][key],data[type_dict['y_axis']][0])
                                     else:
-                                        self.__exact_gaussian_plot(data[value_name]['range'][:,axis_num],data[value_name]['hist'][:,axis_num],self.ax[plot_kind][key],data[type_dict['y_axis']][-1])
+                                        self._exact_gaussian_plot(data[value_name]['range'][:,axis_num],data[value_name]['hist'][:,axis_num],self.ax[plot_kind][key],data[type_dict['y_axis']][-1])
                             self.ax[plot_kind][key].legend(loc="upper right",prop = {'size':self.basic_size['font']})
                         else:
-                            self.__hist_plot_overlaid(data[value_name]['range'],data[value_name]['hist'],data[type_dict['y_axis']],self.ax[plot_kind][key],n_bin=100,N_plot=10,label=type_dict['y_axis'])
+                            self._hist_plot_overlaid(data[value_name]['range'],data[value_name]['hist'],data[type_dict['y_axis']],self.ax[plot_kind][key],n_bin=100,N_plot=10,label=type_dict['y_axis'])
                         self.ax[plot_kind][key].set_title(key)
                         self.ax[plot_kind][key].set_xlabel(value_name)
                         self.ax[plot_kind][key].set_ylabel('{} Distribution'.format(value_name))
-                        self.__decrease_indent()
+                        self._decrease_indent()
 
             for key in type_dict['3d_plot']:
                 for value_name in type_dict['values']:
                     if(value_name in key):
-                        self.__myprint('[plot : {}]'.format(key))
-                        self.__add_indent()
-                        self.__plot_type[plot_kind].append(key)
-                        self.__hist_plot_3d(data[value_name]['range'],data[value_name]['hist'],data[type_dict['y_axis']],self.ax[plot_kind][key],n_bin=100,N_plot=10)
+                        self._myprint('[plot : {}]'.format(key))
+                        self._add_indent()
+                        self._plot_type[plot_kind].append(key)
+                        self._hist_plot_3d(data[value_name]['range'],data[value_name]['hist'],data[type_dict['y_axis']],self.ax[plot_kind][key],n_bin=100,N_plot=10)
                         self.ax[plot_kind][key].set_xlabel(value_name)
                         self.ax[plot_kind][key].set_ylabel(type_dict['y_axis'])
                         self.ax[plot_kind][key].set_zlabel('{} Distribution'.format(value_name))
                         self.ax[plot_kind][key].set_title(key)
-                        self.__decrease_indent()
-            self.__decrease_indent()
+                        self._decrease_indent()
+            self._decrease_indent()
 
         elif(plot_kind == 'correlation'):
-            self.__myprint('[correlation plot]')
-            del self.__plot_type[plot_kind][:]
-            self.__add_indent()
-            self.__set_fig_ax(type_dict,plot_kind,plot_value,directory)
+            self._myprint('[correlation plot]')
+            del self._plot_type[plot_kind][:]
+            self._add_indent()
+            self._set_fig_ax(type_dict,plot_kind,plot_value,directory)
 
             for key in type_dict['2d_plot']:
                 for value_name in type_dict['values']:
                     if(value_name in key):
-                        self.__myprint('[plot : {}]'.format(key))
-                        self.__plot_type[plot_kind].append(key)
-                        self.__plot_2d_overlaid(data[type_dict['x_axis']],data[value_name],data[type_dict['y_axis']],self.ax[plot_kind][key],label=type_dict['y_axis'],N_plot=10)
+                        self._myprint('[plot : {}]'.format(key))
+                        self._plot_type[plot_kind].append(key)
+                        self._plot_2d_overlaid(data[type_dict['x_axis']],data[value_name],data[type_dict['y_axis']],self.ax[plot_kind][key],label=type_dict['y_axis'],N_plot=10)
                         self.ax[plot_kind][key].set_xlabel(type_dict['x_axis'])
                         self.ax[plot_kind][key].set_title(key)
                         self.ax[plot_kind][key].set_ylabel('{}'.format(value_name))
@@ -690,129 +568,129 @@ class PlotManager:
             for key in type_dict['3d_plot']:
                 for value_name in type_dict['values']:
                     if(value_name in key):
-                        self.__myprint('[plot : {}]'.format(key))
-                        self.__plot_type[plot_kind].append(key)
-                        self.__plot_3d(self.ax[plot_kind][key],data[type_dict['x_axis']],data[value_name],data[type_dict['y_axis']],N_plot=10)
+                        self._myprint('[plot : {}]'.format(key))
+                        self._plot_type[plot_kind].append(key)
+                        self._plot_3d(self.ax[plot_kind][key],data[type_dict['x_axis']],data[value_name],data[type_dict['y_axis']],N_plot=10)
                         self.ax[plot_kind][key].set_xlabel(type_dict['x_axis'])
                         self.ax[plot_kind][key].set_ylabel(type_dict['y_axis'])
                         self.ax[plot_kind][key].set_title(key)
                         self.ax[plot_kind][key].set_zlabel('{}'.format(value_name))
-            self.__decrease_indent()
+            self._decrease_indent()
 
         elif(plot_kind == 'totally'):
-            self.__myprint('[plot_kind detect : totally]')
-            del self.__plot_type['totally'][:]
-            self.__set_fig_ax(type_dict,plot_kind,plot_value,directory)
+            self._myprint('[plot_kind detect : totally]')
+            del self._plot_type['totally'][:]
+            self._set_fig_ax(type_dict,plot_kind,plot_value,directory)
             value_name = 'Totally_plot'
-            self.__plot_type[plot_kind].append(value_name)
+            self._plot_type[plot_kind].append(value_name)
             for counter, key in enumerate(type_dict['y_list']):
                 self.ax[plot_kind][value_name].xaxis.set_tick_params(labelsize=self.basic_size['font']*1.5)
                 self.ax[plot_kind][value_name].yaxis.set_tick_params(labelsize=self.basic_size['font']*1.5)
                 value_axis = key
                 label_t = key
-                self.__myprint('[plot : {}]'.format(key))
-                self.__add_indent()
+                self._myprint('[plot : {}]'.format(key))
+                self._add_indent()
                 if(len(type_dict['y_list']) < 2):
-                    self.__plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],label=label_t,log_scale=log_scale)
+                    self._plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],label=label_t,log_scale=log_scale)
                 else:
-                    self.__plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],label=label_t,color=cm.rainbow(float(counter)/len(type_dict['y_list'])),log_scale=log_scale)
+                    self._plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],label=label_t,color=cm.rainbow(float(counter)/len(type_dict['y_list'])),log_scale=log_scale)
                 self.ax[plot_kind][value_name].set_xlabel(type_dict['x_axis'],fontsize=self.basic_size['font']*1.5)
                 self.ax[plot_kind][value_name].grid(which='both',color='black',linestyle='--')
                 if('_' in os.path.basename(file_path)):
-                    self.__myprint('[file name has "_" : y-axis named by it]') 
+                    self._myprint('[file name has "_" : y-axis named by it]') 
                     file_name = os.path.basename(file_path)
                     self.ax[plot_kind][value_name].set_ylabel(file_name.split('_')[-1].split('.')[0],fontsize=self.basic_size['font']*1.5)
                 else:
                     self.ax[plot_kind][value_name].set_ylabel(value_name,fontsize=self.basic_size['font']*1.5)
                 self.ax[plot_kind][value_name].legend(bbox_to_anchor=(1.1, 1),loc="upper right",fontsize=self.basic_size['font'])
-                self.__decrease_indent()
+                self._decrease_indent()
 
         elif(plot_kind == 'normal'):
-            self.__myprint('[normal plot]')
-            del self.__plot_type[plot_kind][:]
-            self.__add_indent()
-            self.__set_fig_ax(type_dict,plot_kind,plot_value,directory)
+            self._myprint('[normal plot]')
+            del self._plot_type[plot_kind][:]
+            self._add_indent()
+            self._set_fig_ax(type_dict,plot_kind,plot_value,directory)
 
             for key in type_dict['ACF_list']:
                 value_axis = key
                 value_axis_error = 'error_' + key
                 value_name = key
-                self.__myprint('[plot : {}]'.format(value_name))
-                self.__add_indent()
-                self.__plot_type[plot_kind].append(value_name)
-                self.__acf_plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],y_error=data[value_axis_error])
+                self._myprint('[plot : {}]'.format(value_name))
+                self._add_indent()
+                self._plot_type[plot_kind].append(value_name)
+                self._acf_plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],y_error=data[value_axis_error])
                 self.ax[plot_kind][value_name].set_xlabel(type_dict['x_axis'])
                 self.ax[plot_kind][value_name].set_ylabel(value_name)
-                self.__decrease_indent()
+                self._decrease_indent()
 
             for key in type_dict['With_error_list']:
                 value_axis = key
                 value_axis_error = 'error_' + key
                 value_name = key
-                if(len(self.__label) > 0):
-                    label = self.__label
+                if(len(self._label) > 0):
+                    label = self._label
                 else:
                     label = None
-                self.__myprint('[plot : {}]'.format(value_name))
-                self.__add_indent()
-                self.__plot_type[plot_kind].append(value_name)
-                self.__plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],y_error=data[value_axis_error],label=label)
+                self._myprint('[plot : {}]'.format(value_name))
+                self._add_indent()
+                self._plot_type[plot_kind].append(value_name)
+                self._plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],y_error=data[value_axis_error],label=label)
                 if(label != None):
                     self.ax[plot_kind][value_name].legend(loc="upper right",fontsize=self.basic_size['font'])
                 self.ax[plot_kind][value_name].set_xlabel(type_dict['x_axis'])
                 self.ax[plot_kind][value_name].set_ylabel(value_name)
-                self.__decrease_indent()
+                self._decrease_indent()
 
             for key in type_dict['Rest_list']:
                 value_axis = key
                 value_name = key
-                if(len(self.__label) > 0):
-                    label = self.__label
+                if(len(self._label) > 0):
+                    label = self._label
                 else:
                     label = None
-                self.__myprint('[plot : {}]'.format(value_name))
-                self.__add_indent()
-                self.__plot_type[plot_kind].append(value_name)
-                self.__plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],label=label)
+                self._myprint('[plot : {}]'.format(value_name))
+                self._add_indent()
+                self._plot_type[plot_kind].append(value_name)
+                self._plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],label=label)
                 if(label != None):
                     self.ax[plot_kind][value_name].legend(loc="upper right",fontsize=self.basic_size['font'])
                 self.ax[plot_kind][value_name].set_xlabel(type_dict['x_axis'])
                 self.ax[plot_kind][value_name].set_ylabel(value_name)
-                self.__decrease_indent()
+                self._decrease_indent()
 
             value_name = 'Energy_totaly_plot'
             for key in type_dict['Energy_list']:
                 value_axis = key
                 value_axis_error = 'error_' + key
-                if(len(self.__label) > 0):
-                    label_t = key + ' ' + self.__label
+                if(len(self._label) > 0):
+                    label_t = key + ' ' + self._label
                 else:
                     label_t = key
-                self.__myprint('[plot : {}]'.format(value_name))
-                self.__add_indent()
-                self.__plot_type[plot_kind].append(value_name)
-                self.__plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],y_error=data[value_axis_error],label=label_t)
+                self._myprint('[plot : {}]'.format(value_name))
+                self._add_indent()
+                self._plot_type[plot_kind].append(value_name)
+                self._plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],y_error=data[value_axis_error],label=label_t)
                 self.ax[plot_kind][value_name].set_xlabel(type_dict['x_axis'])
                 self.ax[plot_kind][value_name].set_ylabel(value_name)
                 self.ax[plot_kind][value_name].legend(loc="upper right",fontsize=self.basic_size['font'])
-                self.__decrease_indent()
+                self._decrease_indent()
 
-            for key in self.__plot_type[plot_kind]:
+            for key in self._plot_type[plot_kind]:
                 for key_t in type_dict['Exact_list']:
                     if(('exact_' + key) ==  key_t):
                         value_name = key
                         value_axis = key_t
-                        self.__myprint('[plot : {}]'.format(key_t))
-                        self.__add_indent()
-                        self.__plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],label=key_t)
-                        self.__decrease_indent()
+                        self._myprint('[plot : {}]'.format(key_t))
+                        self._add_indent()
+                        self._plot_2d(self.ax[plot_kind][value_name],data[type_dict['x_axis']],data[value_axis],label=key_t)
+                        self._decrease_indent()
                         self.ax[plot_kind][value_name].legend(loc="upper right",fontsize=self.basic_size['font'])
 
             for key in self.ax[plot_kind].keys():
                 self.ax['normal'][key].grid(which='both',color='black',linestyle='--')
-            self.__decrease_indent()
+            self._decrease_indent()
 
-        self.__myprint('[complete plot : {}]'.format(plot_kind))
+        self._myprint('[complete plot : {}]'.format(plot_kind))
         if(plot_value != None):
             self.fig[plot_kind].suptitle('{} '.format(plot_value), fontsize=self.basic_size['font'])
         else:
@@ -834,10 +712,10 @@ class PlotManager:
                 print('    [{0}] {1}'.format(key,self.fig[key]))
         else:
             print('    [fig has no elements yet]')
-        if(len(self.__plot_type) != 0):
+        if(len(self._plot_type) != 0):
             print('  [plot_type list]')
-            for key in self.__plot_type.keys():
-                print('    [{0}] {1}'.format(key,self.__plot_type[key]))
+            for key in self._plot_type.keys():
+                print('    [{0}] {1}'.format(key,self._plot_type[key]))
         else:
             print('    [plot_type has no elements yet]')
         self.result_info()
@@ -862,54 +740,47 @@ class PlotManager:
 
     def reload(self,top_directory=None):
         print('[reload result data]') 
-        self.__result_whole_info = ''
-        self.__result_info = ''
-        self.__data_dir_list = []
-        self.__variable_params = []
-        self.__num_patterns_with_variable_params = []
-        self.__common_params = []
-        self.__indent = 0
-        self.__label = ''
+        self._result_whole_info = ''
+        self._result_info = ''
+        self._data_dir_list = []
+        self._variable_params = []
+        self._num_patterns_with_variable_params = []
+        self._common_params = []
+        self._label = ''
         if(top_directory == None):
-            top_directory = self.__top_directory
+            top_directory = self._top_directory
         else:
             print('[input top_directory : {}]'.format(top_directory))
-        self.__set_result_info(top_directory)
+        set_data_map(top_directory)
         self.info()
 
     def reset(self,hard=False):
-        top_directory = self.__top_directory
+        top_directory = self._top_directory
         print('[reset : input top_directory : {}]'.format(top_directory))
         if(hard):
             print('[hard reset : remove buffer and reload all data]')
-            self.__init__(top_directory=top_directory)
+            self._init_(top_directory=top_directory)
         else:
-            self.__plot_kind = ['hist','correlation', 'normal']
+            self._plot_kind = ['hist','correlation', 'normal']
             self.ax = {}
             self.fig = {}
-            self.__plot_type = {}
-            for key in self.__plot_kind:
+            self._plot_type = {}
+            for key in self._plot_kind:
                 self.ax[key] = {}
-                self.__plot_type[key] = []
+                self._plot_type[key] = []
             self.basic_size = {'window_large':20,'window_small':8,'font':20}
-            self.__result_whole_info = ''
-            self.__result_info = ''
-            self.__data_dir_list = []
-            self.__variable_params = []
-            self.__num_patterns_with_variable_params = []
-            self.__common_params = []
-            self.__indent = 0
-            self.__label = ''
-            self.__set_result_info(top_directory)
+            self._result_whole_info = ''
+            self._result_info = ''
+            self._data_dir_list = []
+            self._variable_params = []
+            self._num_patterns_with_variable_params = []
+            self._common_params = []
+            self._indent = 0
+            self._label = ''
+            set_data_map(top_directory)
 
         self.info()
 
-
-    def result_info(self,whole_info=False):
-        if(whole_info):
-            print(self.__result_whole_info)
-        else:
-            print(self.__result_info)
 
 
     def show(self,with_plot=False):
@@ -932,95 +803,52 @@ class PlotManager:
         plot_kind = None
         file_path = ''
         directory_name = ''
-        directory_name = self.__directory_name_set(file,directory)
+        directory_name = self._directory_name_set(file,directory)
         if(file != None):
-            self.__myprint('[file name : {}]'.format(file))
+            self._myprint('[file name : {}]'.format(file))
             file_path = ''
-            file_path = self.__file_path_set(file,directory)
+            file_path = self._file_path_set(file,directory)
         else:
-            self.__myprint('[Error!! : input file name]')
+            self._myprint('[Error!! : input file name]')
             sys.exit()
-        self.__check_json_file(directory_name)
-        data, type_dict, plot_kind = self.__data_load(file_path,plot_kind)
-        self.__myprint('[check data type list]')
-        self.__add_indent()
+        self._check_json_file(directory_name)
+        data, type_dict, plot_kind = self._data_load(file_path,plot_kind)
+        self._myprint('[check data type list]')
+        self._add_indent()
         for key in type_dict.keys():
-            self.__myprint('[{0}] : {1}'.format(key,type_dict[key]))
-        self.__decrease_indent()
-        self.__myprint('[check data shape]')
-        self.__add_indent()
+            self._myprint('[{0}] : {1}'.format(key,type_dict[key]))
+        self._decrease_indent()
+        self._myprint('[check data shape]')
+        self._add_indent()
         for key in data.keys():
-            self.__myprint('[{0}] : {1}'.format(key,data[key].shape))
-        self.__decrease_indent()
+            self._myprint('[{0}] : {1}'.format(key,data[key].shape))
+        self._decrease_indent()
 
     def data_load(self,file=None, directory=None):
         plot_kind = None
         file_path = ''
         directory_name = ''
-        directory_name = self.__directory_name_set(file,directory)
+        directory_name = self._directory_name_set(file,directory)
         if(file != None):
-            self.__myprint('[file name : {}]'.format(file))
+            self._myprint('[file name : {}]'.format(file))
             file_path = ''
-            file_path = self.__file_path_set(file,directory)
+            file_path = self._file_path_set(file,directory)
         else:
-            self.__myprint('[Error!! : input file name]')
+            self._myprint('[Error!! : input file name]')
             sys.exit()
-        data, type_dict, plot_kind = self.__data_load(file_path,plot_kind)
-        self.__myprint('[return values : type_dict, data : type_dict has value names and data is dict type array]')
-        self.__myprint('[check data type list]')
-        self.__add_indent()
+        data, type_dict, plot_kind = self._data_load(file_path,plot_kind)
+        self._myprint('[return values : type_dict, data : type_dict has value names and data is dict type array]')
+        self._myprint('[check data type list]')
+        self._add_indent()
         for key in type_dict.keys():
-            self.__myprint('[{0}] : {1}'.format(key,type_dict[key]))
-        self.__decrease_indent()
-        self.__myprint('[return data]')
-        return copy.deepcopy(self.__buffer_data[file_path]['data'])
+            self._myprint('[{0}] : {1}'.format(key,type_dict[key]))
+        self._decrease_indent()
+        self._myprint('[return data]')
+        return copy.deepcopy(self._buffer_data[file_path]['data'])
 
-    def __progress_bar(self,loop,loop_max,add_sentence=None,indent=0):
-        sys.stdout.write('\r')
-        sentence = ''
-        if(indent > 0):
-            for i in range(indent):
-                sentence += '  ' 
-        else:
-            for i in range(self.__indent):
-                sentence += '  ' 
-        progress_ratio = int(float(loop+1)/float(loop_max)*100)
-        sentence += '[Progress : {0:0=3}%]'.format(progress_ratio)
-        if(add_sentence != None):
-            sentence += add_sentence
-        sys.stdout.write(sentence)
-        sys.stdout.flush()
-        if(progress_ratio >= 100):
-            sys.stdout.write('\n')
 
-    def __myprint(self,sentence):
-        if(not isinstance(sentence, str)):
-            sentence = '{}'.format(sentence)
-        for i in range(self.__indent):
-            sentence = '  ' + sentence
-        print(sentence)
-
-    def __add_indent(self,N=0):
-        if(N != 0):
-            for i in range(N):
-                self.__indent += N
-        else:
-            self.__indent += 1
-
-    def __decrease_indent(self,N=0):
-        if(N != 0):
-            for i in range(N):
-                self.__indent -= N
-        else:
-            self.__indent -= 1
-        if(self.__indent < 0):
-            self.__indent = 0
-
-    def __init_indent(self):
-        self.__indent = 0
-
-    def __genuine_hist_plot(self,data_range,data_hist,ax,label=None):
-        self.__myprint('[geniine hist plot]')
+    def _genuine_hist_plot(self,data_range,data_hist,ax,label=None):
+        self._myprint('[geniine hist plot]')
         total_number = np.sum(data_hist)
         n_bin = len(data_range)
         v_max = data_range.max()
@@ -1035,18 +863,18 @@ class PlotManager:
             label = 'unmodify'
         ax.bar(data_range , y_value , width=dv, label=label, alpha=0.4,color='blue')
 
-    def __process_hist_plot(self,data_range,data_hist,ax,n_bin=0,label=None):
-        self.__myprint("[modified hist plot]")
+    def _process_hist_plot(self,data_range,data_hist,ax,n_bin=0,label=None):
+        self._myprint("[modified hist plot]")
         if (n_bin == 0):
             n_bin = 100
         total_number = np.sum(data_hist)
         total_number = int(total_number)
-        hist,v_domain,dv= self.__calc_hist(data_range,data_hist,n_bin)
+        hist,v_domain,dv= self._calc_hist(data_range,data_hist,n_bin)
         if(label == None):
             label = 'modify'
         ax.bar(v_domain , hist , width=dv, label=label, alpha=0.4)
 
-    def __exact_gaussian_plot(self,data_range,data_hist,ax,T):
+    def _exact_gaussian_plot(self,data_range,data_hist,ax,T):
         n_bin = len(data_range)
         total_number = np.sum(data_hist)
         dv = data_range[1] - data_range[0]
@@ -1067,14 +895,14 @@ class PlotManager:
         v = np.linspace(v_min,v_max,n_bin)
         Gaussian = norm.pdf(v,loc=0.0,scale=sigma)
         error = np.sqrt(variance / (total_number + 1))
-        self.__add_indent()
-        self.__myprint("[mean : {0}, variance :  {1}, error : {2}]".format(mean, variance, error))
-        self.__decrease_indent()
+        self._add_indent()
+        self._myprint("[mean : {0}, variance :  {1}, error : {2}]".format(mean, variance, error))
+        self._decrease_indent()
         ax.plot(v,Gaussian,label='Gaussian:T={0:.3g}'.format(T))
 
-    def __hist_plot_overlaid(self,data_range,data_hist,data_domain,ax,n_bin=0,N_plot=0,label=None):
-        self.__myprint('[modified hist plot 2d overlaid]')
-        self.__add_indent()
+    def _hist_plot_overlaid(self,data_range,data_hist,data_domain,ax,n_bin=0,N_plot=0,label=None):
+        self._myprint('[modified hist plot 2d overlaid]')
+        self._add_indent()
         if(N_plot ==0 or len(data_domain) < N_plot):
             N_plot = len(data_domain)
             loop_max = int(len(data_domain))
@@ -1082,27 +910,27 @@ class PlotManager:
             loop_max = N_plot
         if(n_bin==0):
             n_bin = len(data_range[:,0])
-            self.__myprint('[set n_bin : {}]'.format(n_bin))
+            self._myprint('[set n_bin : {}]'.format(n_bin))
         else:
-            self.__myprint('[n_bin input :{}]'.format(n_bin))
-        self.__myprint('[set loop_max : {}]'.format(loop_max))
+            self._myprint('[n_bin input :{}]'.format(n_bin))
+        self._myprint('[set loop_max : {}]'.format(loop_max))
         t_max = data_domain.max()
         for loop_t in range(loop_max):
             loop = loop_t * int(len(data_domain)/loop_max)
-            hist,v_domain,dv= self.__calc_hist(data_range[:,loop],data_hist[:,loop],n_bin)
+            hist,v_domain,dv= self._calc_hist(data_range[:,loop],data_hist[:,loop],n_bin)
             print_sentence = '[ d_range : {0:.4e}, numeric d_range : {1:.4e}]'.format( dv, data_range[1,0] - data_range[0,0])
             if(loop_max < 15):
                 ax.bar(v_domain , hist , width=dv, color=cm.jet(data_domain[loop]/t_max), alpha=0.2, label='{0} : {1}'.format(label,data_domain[loop]))
             else:
                 ax.bar(v_domain , hist , width=dv, color=cm.jet(data_domain[loop]/t_max), alpha=0.2)
-            self.__progress_bar(loop_t,loop_max,add_sentence=print_sentence)
+            self._progress_bar(loop_t,loop_max,add_sentence=print_sentence)
         if(loop_max < 15):
             ax.legend(loc="upper right",prop = {'size':self.basic_size['font']})
-        self.__decrease_indent()
+        self._decrease_indent()
 
-    def __hist_plot_3d(self,data_range,data_hist,data_domain,ax,n_bin=0,N_plot=0):
-        self.__myprint('[modified hist plot 3d]')
-        self.__add_indent()
+    def _hist_plot_3d(self,data_range,data_hist,data_domain,ax,n_bin=0,N_plot=0):
+        self._myprint('[modified hist plot 3d]')
+        self._add_indent()
         if(N_plot ==0 or len(data_domain) < N_plot):
             N_plot = len(data_domain)
             loop_max = int(len(data_domain))
@@ -1110,20 +938,20 @@ class PlotManager:
             loop_max = N_plot
         if(n_bin == 0):
             n_bin = len(data_range[:,0])
-            self.__myprint('[set n_bin : {}]'.format(n_bin))
+            self._myprint('[set n_bin : {}]'.format(n_bin))
         else:
-            self.__myprint('[n_bin input :{}]'.format(n_bin))
-        self.__myprint('[set loop_max : {}]'.format(loop_max))
+            self._myprint('[n_bin input :{}]'.format(n_bin))
+        self._myprint('[set loop_max : {}]'.format(loop_max))
         t_max = data_domain.max()
         for loop_t in range(loop_max):
             loop = loop_t * int(len(data_domain)/loop_max)
-            hist,v_domain,dv= self.__calc_hist(data_range[:,loop],data_hist[:,loop],n_bin)
+            hist,v_domain,dv= self._calc_hist(data_range[:,loop],data_hist[:,loop],n_bin)
             print_sentence = '[ d_range : {0:.4e}, numeric d_range : {1:.4e}]'.format( dv, data_range[1,0] - data_range[0,0])
             ax.bar(v_domain , hist, data_domain[loop], zdir='y', width=dv, color=cm.jet(data_domain[loop]/t_max), alpha=0.5)
-            self.__progress_bar(loop_t,loop_max,add_sentence=print_sentence)
-        self.__decrease_indent()
+            self._progress_bar(loop_t,loop_max,add_sentence=print_sentence)
+        self._decrease_indent()
 
-    def __calc_hist(self,data_range,data_hist,n_bin):
+    def _calc_hist(self,data_range,data_hist,n_bin):
         length = len(data_range)
         v_max = data_range.max()
         v_min = data_range.min()
@@ -1150,8 +978,8 @@ class PlotManager:
             v_domain[i] = v_min + dv *np.float64(i) 
         return copy.deepcopy(hist),copy.deepcopy(v_domain),dv
 
-    def __plot_3d(self,ax,data_range,data_z,data_domain,N_plot=0):
-        self.__add_indent()
+    def _plot_3d(self,ax,data_range,data_z,data_domain,N_plot=0):
+        self._add_indent()
         if(N_plot ==0 or len(data_domain) < N_plot):
             N_plot = len(data_domain)
             loop_max = int(len(data_domain))
@@ -1161,11 +989,11 @@ class PlotManager:
         for loop_t in range(loop_max):
             loop = loop_t * int(len(data_domain)/loop_max)
             ax.plot(x[loop,:],y[loop,:],data_z[:,loop],color=cm.jet(data_domain[loop]/data_domain.max()))
-            self.__progress_bar(loop_t,loop_max)
-        self.__decrease_indent()
+            self._progress_bar(loop_t,loop_max)
+        self._decrease_indent()
 
-    def __plot_2d_overlaid(self,data_range,data_z,data_domain,ax,N_plot=0,label=None):
-        self.__add_indent()
+    def _plot_2d_overlaid(self,data_range,data_z,data_domain,ax,N_plot=0,label=None):
+        self._add_indent()
         if(N_plot ==0 or len(data_domain) < N_plot):
             N_plot = len(data_domain)
             loop_max = int(len(data_domain))
@@ -1177,12 +1005,12 @@ class PlotManager:
                 ax.plot(data_range,data_z[:,loop],color=cm.jet(data_domain[loop]/data_domain.max()),label='{0} : {1}'.format(label,data_domain[loop]))
             else:
                 ax.plot(data_range,data_z[:,loop],color=cm.jet(data_domain[loop]/data_domain.max()))
-            self.__progress_bar(loop_t,loop_max)
+            self._progress_bar(loop_t,loop_max)
         if(loop_max < 15):
             ax.legend(loc="upper right",prop = {'size':self.basic_size['font']})
-        self.__decrease_indent()
+        self._decrease_indent()
 
-    def __acf_plot_2d(self,ax,x,y,y_error=None,label=None):
+    def _acf_plot_2d(self,ax,x,y,y_error=None,label=None):
         vv = y[0]
         y_t = y / vv
         if(isinstance(y_error,list)):
@@ -1193,7 +1021,7 @@ class PlotManager:
             else:
                 ax.errorbar(x,y_t,yerr=y_error)
 
-    def __plot_2d(self,ax,x,y,y_error=None,label=None,color=None,marker=None,log_scale=False):
+    def _plot_2d(self,ax,x,y,y_error=None,label=None,color=None,marker=None,log_scale=False):
         if(marker is None):
             marker = ''
         if(y_error is None):
@@ -1210,3 +1038,50 @@ class PlotManager:
         if(log_scale):
             ax.set_yscale('log')  
             ax.set_xscale('log')  
+
+
+def set_data_map(top_directory):
+    config_data_map = []
+    result_data_map = []
+
+    top_depth = len([x for x in top_directory.split('/') if(len(x) > 0)])
+
+    for current_directory, included_directory, files in os.walk(top_directory):
+        current_dir_list = current_directory.split('/') 
+        indent = len(current_dir_list)
+
+        if('experiment_' in os.path.basename(current_directory)):
+            json_data = json.load(open(os.path.join(current_directory,'parameter.json'),'r'))
+            config_data_map.append({})
+            config_data_map[-1]['date'] = os.path.dirname(current_directory)
+            config_data_map[-1]['variable_parameters'] = {}
+            config_data_map[-1]['common_parameters'] = {'command_name':json_data['experiment_params']['command_name']}
+            for key in json_data['simulate_params'].keys():
+                if(not 'dir' in key and not 'time_info' in key):
+                    if(isinstance(json_data['simulate_params'][key], list) or isinstance(json_data['simulate_params'][key],str)):
+                        config_data_map[-1]['variable_parameters'][key] = []
+                    else:
+                        config_data_map[-1]['common_parameters'][key] = json_data['simulate_params'][key]
+
+        if(not included_directory or 'number' in os.path.basename(current_directory)):
+            result_files = []
+            json_file_name = ''
+            for key in files:
+                if('parameter.json' in key):
+                    json_file_name = key
+                if('result' in key):
+                    result_files.append(key)
+            json_data = json.load(open(os.path.join(current_directory,json_file_name),'r'))
+            result_data_map.append({})
+            result_data_map[-1]['result_directory'] = current_directory
+            result_data_map[-1]['date'] = config_data_map[-1]['date']
+            result_data_map[-1]['files'] = files
+            result_data_map[-1]['common_parameters'] = len(config_data_map) - 1
+            if(config_data_map[-1]['variable_parameters']):
+                result_data_map[-1]['variable_parameters'] = {} 
+                for key in config_data_map[-1]['variable_parameters'].keys():
+                    config_data_map[-1]['variable_parameters'][key].append(json_data['simulate_params'][key])
+                    result_data_map[-1]['variable_parameters'][key] = json_data['simulate_params'][key]
+
+    return copy.deepcopy(config_data_map), copy.deepcopy(result_data_map) 
+
