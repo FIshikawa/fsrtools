@@ -23,6 +23,7 @@ def main():
     if(args['set_commands']):
         print('set commands mode')
         fsrsimulate = CommandManager()
+        fsrsimulate.command_list()
         itembed = InteractiveShellEmbed()
         color_print('[Interactive Shell Mode]','GREEN')
         color_print('[ATTENTION]','GREEN')
@@ -35,7 +36,9 @@ def main():
         target_directory = args['log']
         log_check(target_directory)
     else:
-      operate_experiments(parameter_file=args['json'],log_file=args['log_file'],cout_tag=args['cout'],test_mode=args['test'])
+        fsrsimulate = CommandManager()
+        command_data = fsrsimulate.command_data
+        operate_experiments(parameter_file=args['json'],log_file=args['log_file'],cout_tag=args['cout'],test_mode=args['test'],command_data=command_data)
 
 
 if __name__ == '__main__':
