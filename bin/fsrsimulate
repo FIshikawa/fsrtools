@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-import sys
 from IPython.terminal.embed import InteractiveShellEmbed
-from fsrtools.simulate_tools import operate_experiments
 from fsrtools.simulate_tools import CommandManager
+from fsrtools.simulate_tools import operate_experiments
+from fsrtools.simulate_tools import log_check
 from fsrtools.util import colors
 from fsrtools.util import color_print
 
@@ -14,6 +14,7 @@ def main():
 
     parser.add_argument('-j','--json',action='store',default=None,type=str,help='input parameter json file')
     parser.add_argument('-t','--test',action='store_true',help='test mode option')
+    parser.add_argument('--log',action='store',metavar='DIRECTORY',type=str,help='directory input : all log plot')
     parser.add_argument('--cout',action='store_true',help='out calculation')
     parser.add_argument('-lf','--log_file',action='store', default='log.dat',type=str,help='log file name : default "log.dat" or "log_test.dat" in test mode')
     parser.add_argument('--set_commands',action='store_true',help='set command mode : via IPython')
@@ -30,7 +31,9 @@ def main():
         color_print('[Start IPython]','GREEN')
         itembed()
         color_print('[End Interactive Shell]','GREEN')
-
+    elif(args['log'] != None):
+        target_directory = args['log']
+        log_check(target_directory)
     else:
       operate_experiments(parameter_file=args['json'],log_file=args['log_file'],cout_tag=args['cout'],test_mode=args['test'])
 
