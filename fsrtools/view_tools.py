@@ -87,7 +87,7 @@ class PlotManager:
                     self.__num_patterns_with_variable_params.append(0)
                     self.__variable_params.append({})
                     self.__common_params.append({})
-                    self.__common_params[-1]['execute_file'] = json_data['experiment_params']['execute_file']
+                    self.__common_params[-1]['command_name'] = json_data['experiment_params']['command_name']
                     for key in json_data['simulate_params'].keys():
                         if(not 'dir' in key and not 'time_info' in key):
                             if(isinstance(json_data['simulate_params'][key], list)):
@@ -95,7 +95,7 @@ class PlotManager:
                             else:
                                 self.__common_params[-1][key] = json_data['simulate_params'][key]
                     sentence += indent_t + '[common parameter]'
-                    sentence += '\n' + indent_t + '  execute_file : {}'.format(self.__common_params[-1]['execute_file']) 
+                    sentence += '\n' + indent_t + '  command_name : {}'.format(self.__common_params[-1]['command_name']) 
                     for key in self.__common_params[-1]:
                         sentence = sentence + '\n' + indent_t + '  {0} : {1}'.format(key,self.__common_params[-1][key])
                     sentence += '\n' + indent_t + '[varibale parameter]'

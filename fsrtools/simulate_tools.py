@@ -188,7 +188,7 @@ def execute_simulation(command_name,simulate_params,result_directory,log_write,c
     return_value = p.wait()
     if(return_value != 0):
         log_write('[Abnormal termination detected : return_value : {}]'.format(return_value))
-        reset_indent()
+        log_write.reset_indent()
         log_write('[Error End !]')
         raise ValueError('[Abnormal termination detected : return_value : {}]'.format(return_value))
 
@@ -256,8 +256,9 @@ def set_total_combinations(simulate_params,log_write):
                         local_variable_dict[key_t] = simulate_params[key_t]
                         counter += 1
             if(len(local_variable_dict) == counter):
-                simulate_params_temp[key] = eval(simulate_params[key],globals(),local_variable_dict)
-                log_write('[{0} : {1}]'.format(key, simulate_params[key]))
+                calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
+                simulate_params_temp[key] = integer_filter(calculated_value)
+                log_write('[{0} : {1}]'.format(key, simulate_params_temp[key]))
             else:
                 for key_t in local_variable_dict.keys():
                     log_write('{0} is set at execute command set : depend on changing {1}'.format(key,key_t))
@@ -278,6 +279,18 @@ def set_simulate_params(simulate_params,combination):
                     local_variable_dict[key_t] = simulate_params[key_t]
             simulate_params_temp[key] = eval(simulate_params[key],globals(),local_variable_dict)
     return simulate_params_temp
+
+
+def integer_filter(n):
+    if(isinstance(n, int)):
+        return n
+    elif(isinstance(n, float)):
+        if(n.is_integer()):
+            return int(n)
+        else:
+            return n
+    else:
+        return n
 
 
 class CommandManager:
