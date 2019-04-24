@@ -1,7 +1,21 @@
 import pytest
+import json
 import shutil
 import os
 import fsrtools.simulate_tools as fsrsimulate
+
+class CommandManagerTest(fsrsimulate.CommandManager):
+    def __init__(self):
+        super(fsrsimulate.CommandManager,self).__init__()
+        self._json_path = fsrsimulate._commands_json_file(test=True)
+        if(os.path.exists(self._json_path)):
+            commands_json = open(self._json_path)
+            self.command_data = json.load(commands_json)
+            self.command_name_list = list(self.command_data.keys())
+        else:
+            self.command_data = {}
+            self.command_name_list= []
+
 
 def test_integer_filter():
     assert isinstance(fsrsimulate.integer_filter(10.0),int)
@@ -11,12 +25,13 @@ def test_integer_filter():
 
 def test_CommandManager():
     files_list = os.listdir('./test/')
-    command_manager = fsrsimulate.CommandManagerTest()
+    command_manager = CommandManagerTest()
     if('hello_world' in command_manager.command_name_list):
         print('hello_world is already set : remove for initialization ')
         command_manager.remove_command('hello_world')
     command_manager.add_command({'hello_world' : ['python','./test/hello_world.py','N_loop']})
     command_manager.save()
+    command_manager.command_list()
     command_manager.test_simulate('hello_world',['python','./test/hello_world.py'])
     files_list_created = os.listdir('./test/')
     for key in list(set(files_list_created) - set(files_list)):
@@ -91,13 +106,15 @@ def test_set_simulate_params():
 @pytest.fixture(scope='module')
 def set_data_for_test():
     files_list = os.listdir('./test/')
-    command_manager = fsrsimulate.CommandManager()
+    command_manager = CommandManagerTest()
     if('hello_world' in command_manager.command_name_list):
         command_manager.remove_command('hello_world')
     command_manager.add_command({'hello_world' : ['python','./test/hello_world.py','N_loop']})
     command_manager.save()
+    pytest.log_file = 'log.dat'
+    pytest.parameter_json = 'test/parameter_test.json'
+    pytest.command_data = command_manager.command_data
     yield set_data_for_test
-    command_manager.remove_command('hello_world')
     command_manager.save()
     files_list_created = os.listdir('./test/')
     for key in list(set(files_list_created) - set(files_list)):
@@ -108,14 +125,17 @@ def set_data_for_test():
 
 
 def test_operate_experiments(set_data_for_test):
-    log_file = 'log.dat'
-    parameter_json = 'test/parameter_test.json'
-    fsrsimulate.operate_experiments(parameter_file=parameter_json,log_file=log_file,test_mode=True)
+    log_file = pytest.log_file
+    parameter_json = pytest.parameter_json
+    command_data = pytest.command_data
+    fsrsimulate.operate_experiments(parameter_file=parameter_json,log_file=log_file,test_mode=True,command_data=command_data)
+
 
 
 def test_log_check(set_data_for_test):
-    log_file = 'log.dat'
-    parameter_json = 'test/parameter_test.json'
-    fsrsimulate.operate_experiments(parameter_file=parameter_json,log_file=log_file,test_mode=True)
+    log_file = pytest.log_file
+    parameter_json = pytest.parameter_json
+    command_data = pytest.command_data
+    fsrsimulate.operate_experiments(parameter_file=parameter_json,log_file=log_file,test_mode=True,command_data=command_data)
     fsrsimulate.log_check('./test')
 
