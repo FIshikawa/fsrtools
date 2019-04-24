@@ -122,3 +122,8 @@ def test_log_check():
         except OSError as now_error:
             shutil.rmtree(os.path.join('./test',key))
  
+
+def test_integer_filter():
+    assert isinstance(fsrsimulate.integer_filter(10.0),int)
+    assert isinstance(fsrsimulate.integer_filter(1),int)
+    assert isinstance(fsrsimulate.integer_filter('hello'),str)
