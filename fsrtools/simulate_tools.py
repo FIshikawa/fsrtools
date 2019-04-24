@@ -18,7 +18,7 @@ def _commands_json_file(test=False):
         return os.path.join(fsrtools.__path__[0],'config/commands.json')
 
 
-def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test_mode=False):
+def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test_mode=False,command_data=None):
     current_directory = os.getcwd()
 
     if(test_mode):
@@ -92,7 +92,7 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
                 json_data['experiments'][key]['simulate_params'][key_temp] = value_dict_temp[key_temp] 
 
         json_data['experiments'][key]['experiment_params']['experiment_dir'] = experiment_directory
-        operate_simulations(json_data['experiments'][key],experiment_tag,log_write)
+        operate_simulations(json_data['experiments'][key],experiment_tag,log_write,command_data)
         log_write.decrease_indent()
         log_write('[{0}][end experiment : {1} : lap time : {2}]'.format(key,stop_watch.lap_end(),stop_watch.lap_time()))
         previous_key = key
@@ -105,7 +105,7 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
     shutil.copy(log_file,os.path.join(experiment_directory,'log.dat'))
 
 
-def operate_simulations(param_dict_original,experiment_tag,log_write):
+def operate_simulations(param_dict_original,experiment_tag,log_write,command_data):
     stop_watch = StopWatch()
     setting_manager = SettingManager(log_write) 
 
@@ -133,8 +133,6 @@ def operate_simulations(param_dict_original,experiment_tag,log_write):
     simulate_params_original, total_combinations = set_total_combinations(simulate_params_original,log_write)
 
     simulate_number = 1
-    commands_json = open(_commands_json_file())
-    command_data = json.load(commands_json)
     if(len(total_combinations) > 0):
         log_write('[total number of simulations : {}]'.format(len(total_combinations)))
         log_write('[check iterate lists]')
@@ -300,7 +298,6 @@ class CommandManager:
             commands_json = open(self._json_path)
             self.command_data = json.load(commands_json)
             self.command_name_list = list(self.command_data.keys())
-            self.command_list()
         else:
             self.coomands_data = {}
             self.command_name_list= []
@@ -385,20 +382,6 @@ class CommandManager:
         for key in list(set(files_list_created) - set(files_list)):
             os.remove(os.path.join('./test',key))
         print('test simulate end')
-
-
-class CommandManagerTest(CommandManager):
-    def __init__(self):
-        super(CommandManager,self).__init__()
-        self._json_path = _commands_json_file(test=True)
-        if(os.path.exists(self._json_path)):
-            commands_json = open(self._json_path)
-            self.command_data = json.load(commands_json)
-            self.command_name_list = list(self.command_data.keys())
-            self.command_list()
-        else:
-            self.command_data = {}
-            self.command_name_list= []
 
 
 def log_check(top_directory):
