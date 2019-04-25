@@ -7,8 +7,8 @@ if __name__ == '__main__':
     argc = len(argv)
 
     result_directory = './'
-    N_x = 1
-    N_y = 1
+    N_x = 10
+    N_y = 10
     if(argc > 1):
         result_directory = str(argv[1])
     if(argc > 2):
