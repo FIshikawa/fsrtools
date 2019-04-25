@@ -56,10 +56,12 @@ def main():
                 fsrplot.plot_result(file=file_name,plot_kind='totally',log_scale=args['log_scale'])
             else:
                 fsrplot.plot_result(file=file_name,log_scale=args['log_scale'])
+            fsrplot.show()
         elif(args['directory'] != None):
             directory_name = args['directory']
             fsrplot = PlotManager(top_directory=directory_name)
             fsrplot.plot_result(directory=directory_name)
+            fsrplot.show()
         else:
             raise KeyError('No options or No targets,  must select')
 
