@@ -46,14 +46,23 @@ class LogManager:
     def reset_indent(self):
         self.indent = 0
 
-    def add_indent(self):
-        self.indent += 1
+    def add_indent(self,increase_number=0):
+        if(increase_number):
+            self.indent += increase_number
+        else:
+            self.indent += 1
 
-    def decrease_indent(self):
-        self.indent -= 1
+    def decrease_indent(self,decrease_number=0):
+        if(decrease_number):
+            self.indent -= decrease_number
+        else:
+            self.indent -= 1
 
     def __call__(self,sentence,log_file_temp=None):
-        sentence = self.__indent() + sentence
+        if(isinstance(sentence,str)):
+            sentence = self.__indent() + sentence
+        else:
+            sentence = self.__indent() + '{}'.format(sentence)
         if(log_file_temp is None and self.log_file is not None):
             f = open(self.log_file,'a')
             f.write(sentence + '\n')
