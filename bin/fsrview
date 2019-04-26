@@ -14,7 +14,7 @@ def main():
     parser.add_argument('-d','--directory',action='store',type=str,help='result direcotry')
     parser.add_argument('-f','--file',action='store',type=str,help='result file')
     parser.add_argument('-ip','--interactive_plot',action='store_true',help='Plot Interactive mode : via IPython')
-    parser.add_argument('-pt','--plot_type',choices=['normal','totally','hist','correlation','3d'],help='plot option : with instant plot mode')
+    parser.add_argument('-pt','--plot_type',choices=['normal','totally','hist','3d'],help='plot option : with instant plot mode')
     parser.add_argument('--log_scale',action='store_true',help='log scale plot : instant mode only')
 
     args = vars(parser.parse_args())
