@@ -14,7 +14,10 @@ The package has some console tools.
 You should add `.local/bin/` to PATH for the console tools.
 
 ## requirement
-python3.6
+Python 3.6.5
+pytest 4.4.1
+matplotlib 2.2.2
+
 
   
 

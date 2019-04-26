@@ -1,208 +1,66 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
-import sys
 import os
-import glob
-import json
 import argparse
-from datetime import datetime
-from fsrtools.view_tools import PlotManager
 from IPython.terminal.embed import InteractiveShellEmbed
-from fsrtools._paramset import set_simulate_params_iterate_dict
-
-def colors(color):
-    colors_dict= {'BLACK'     : '\033[30m',
-                  'RED'       : '\033[31m',
-                  'GREEN'     : '\033[32m',
-                  'YELLOW'    : '\033[33m',
-                  'BLUE'      : '\033[34m',
-                  'PURPLE'    : '\033[35m',
-                  'CYAN'      : '\033[36m',
-                  'WHITE'     : '\033[37m',
-                  'END'       : '\033[0m' ,
-                  'BOLD'      : '\038[1m' ,
-                  'UNDERLINE' : '\033[4m' ,
-                  'INVISIBLE' : '\033[08m',
-                  'REVERCE'   : '\033[07m'
-                  }
-    return colors_dict[color]
-
-
-def color_print(sentence,color):
-    print(colors(color) + sentence + colors('END'))
-
-
-def time_log_print(dir,n_indent):
-    sentence = ''
-    indent_str = ''
-    sub_indent_str = ''
-    dir_name = dir.split('/')[-1]
-    for i in range(n_indent):
-        indent_str += '  ' 
-    for i in range(n_indent+1):
-        sub_indent_str += '  '
-    if(os.path.exists(dir)):
-        json_file = open(os.path.join(dir,'parameter.json'),'r')
-        json_data = json.load(json_file)
-        time_info = json_data['time_info']
-        simulate_params = json_data['simulate_params']
-        execute_file = json_data['experiment_params']['execute_file']
-        simulate_params, iterate_dict , iterate_key_list, iterate_pair = set_simulate_params_iterate_dict(simulate_params,
-                                                                                                       execute_file,
-                                                                                                       indent=n_indent)
-        if('start_time' in time_info.keys() and len(time_info['start_time']) > 0):
-            start_time = time_info['start_time']
-        else:
-            start_time = 'wating'
-        if('end_time' in time_info.keys() and len(time_info['end_time']) > 0):
-          end_time = time_info['end_time']
-          diff_time = datetime.strptime(end_time, '%Y/%m/%d %H:%M:%S') - datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
-          diff_time = diff_time.total_seconds()
-          diff_time = '{0}h{1}m{2}s'.format(int(diff_time//3660), int(diff_time%3600//60), diff_time%3600%60)
-          sentence = indent_str + '[{0}] : [start {1}] : [end {2}] : [duration {3}]'.format(dir_name,start_time,end_time,diff_time)
-        else:
-          ongoing_number = len([x for x in os.listdir(dir) if os.path.isdir(os.path.join(dir,x))])
-          nowtime = datetime.now()
-          diff_time = nowtime - datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
-          diff_time = diff_time.total_seconds()
-          diff_time = '{0}h{1}m{2:.3g}s'.format(int(diff_time//3660), int(diff_time%3600//60), diff_time%3600%60)
-          sentence = indent_str + '[{0}] : [start {1}] :'.format(dir_name,start_time)\
-                              + colors('RED') \
-                              + ' [now  number-{0} ({0}/{1}) {2} past]'.format(ongoing_number,len(iterate_pair),diff_time)\
-                              + colors('END')
-        sentence += '\n' + indent_str + '  [execute_file : {0}] [number of simulations : {1}] '.format(execute_file,len(iterate_pair)) 
-        if(len(iterate_pair) > 0):
-            sentence += '[change params :'
-            for key in simulate_params:
-                if(isinstance(simulate_params[key],list)):
-                    sentence += ' ' +key + ','
-        sentence += ']'
-    else:
-        sentence += indent_str + '[{}] : [not ready]'.format(dir_name) 
-    print(sentence)
-
-
-def plot_log(top_dir):
-    print('[read whole parameter]')
-    json_file = open(os.path.join(top_dir,'parameter.json'),'r')
-    num_experiments = len(json.load(json_file)['experiments'])
-    print('[number of experiments : {}]'.format(num_experiments))
-    for i in range(num_experiments):
-        experiment_dir = os.path.join(top_dir,'experiment_' + str(i+1))
-        n_indent_experiment = 1
-        time_log_print(experiment_dir,n_indent_experiment)
-
-
-def log_check(top_dir):
-    files_list = os.listdir(top_dir)
-    experiment_dir_list  = [x for x in files_list if 'experiment' in x and os.path.isdir(os.path.join(top_dir, x))]
-    date_dir_list  = [x for x in files_list if len(x.split('-')) > 5 and os.path.isdir(os.path.join(top_dir, x))]
-    print('[top directory : {}]'.format(top_dir))
-    if(len(experiment_dir_list) > 0):
-        print('[top directory is root of experiments dir : plot all log in experiments]')
-        plot_log(top_dir)
-    elif(len(date_dir_list) > 0):
-        print('[top directory is root of data : plot latest one]')
-        date_dict = {}
-        for dir in date_dir_list:
-          date_dict[dir] =  datetime.strptime(dir,'%Y-%m-%d-%H-%M-%S') 
-        latest_dir = max(date_dict)
-        plot_log(os.path.join(top_dir,latest_dir))
-    else:
-      print('[Not root of results : lateset experiments plot : ref all "log_*.dat"]')
-      files_list = glob.glob(top_dir + '*')
-      for key in files_list:
-          if('log' in key):
-              log_file_name = key 
-              color_print('[{0} : {1}]'.format(top_dir,log_file_name),'GREEN')
-              if(os.path.exists(log_file_name)):
-                  log_file = open(log_file_name,'r')
-                  whole_lines = log_file.readlines()
-                  length_lines = len(whole_lines)
-                  parameter_declare = [x for x in whole_lines if 'parameter file' in x]
-                  parameter_declare = parameter_declare[0].split('\n')[0]
-                  print(parameter_declare)
-                  target_dir_list = [x for x in whole_lines if 'set result output directory' in x] 
-                  if(len(target_dir_list) == 1):
-                      target_dir = target_dir_list[0].split(' ')[-1].split(']')[0]
-                      target_dir = os.path.join(top_dir,target_dir)
-                      if(os.path.isdir(target_dir)):
-                          print('[result dir : {}]'.format(target_dir))
-                          workstation = [x for x in whole_lines if 'server name' in x]
-                          workstation = workstation[0].split('\n')[0]
-                          print(workstation)
-                          plot_log(target_dir)
-                      else:
-                          print('  [Error! no directory s.t : {}]'.format(target_dir))
-              else:
-                  print('  [Error! Not find particular sentence]') 
-    print('[complete print]')
+from fsrtools.view_tools import PlotManager
+from fsrtools.util import colors
+from fsrtools.util import color_print
 
 
 def main():
     parser = argparse.ArgumentParser(description='Visualize Results Scripts',add_help=True)
     parser.add_argument('-d','--directory',action='store',type=str,help='result direcotry')
     parser.add_argument('-f','--file',action='store',type=str,help='result file')
-    parser.add_argument('--log',action='store',metavar='DIRECTORY',type=str,help='directory input : all log plot')
     parser.add_argument('-ip','--interactive_plot',action='store_true',help='Plot Interactive mode : via IPython')
-    parser.add_argument('--normal',action='store_true',help='normal plot option : with instant plot mode')
-    parser.add_argument('--totally',action='store_true',help='totally plot option : with instant plot mode')
+    parser.add_argument('-pt','--plot_type',choices=['normal','totally','hist','3d'],help='plot option : with instant plot mode')
     parser.add_argument('--log_scale',action='store_true',help='log scale plot : instant mode only')
 
-    if('setup.py' in sys.argv):
-        print('setup test : fsrsimulate : ok')
-    else:
-        args = vars(parser.parse_args())
+    args = vars(parser.parse_args())
 
-        if(args['interactive_plot']):
-            itembed = InteractiveShellEmbed()
-            color_print('[Interactive Shell Mode]','GREEN')
-            if(args['directory'] != None or args['file'] != None):
-                if(args['directory'] != None):
-                    target = args['directory']
-                    if(os.path.isdir(target)):
-                        fsrplot = PlotManager(top_directory=target) # for complement function
-                    else:
-                        print('[Error!! traget is not directory]')
-                        sys.exit()
-                    print('[Info of fsrplot]')
-                    fsrplot.info()
+    if(args['interactive_plot']):
+        itembed = InteractiveShellEmbed()
+        color_print('[Interactive Shell Mode]','GREEN')
+        if(args['directory'] != None or args['file'] != None):
+            if(args['directory'] != None):
+                target = args['directory']
+                if(os.path.isdir(target)):
+                    fsrplot = PlotManager(top_directory=target) # for complement function
                 else:
-                    if(os.path.exisits(target)):
-                        print('[plot file : {}]'.format(target))
-                    else:
-                        print('[Error!! traget does not exist]')
-                        sys.exit()
-                color_print('[ATTENTION]','GREEN')
-                print(' [All configuration should be set by "fsrplot"]')
-                print(' [All infomation can be seen by "fsrplot.info()"]')
-                color_print('[Start IPython]','GREEN')
-                itembed()
-                color_print('[End Interactive Shell]','GREEN')
+                    raise ValueError('traget is not directory')
+                print('[Info of fsrplot]')
+                fsrplot.info()
             else:
-                print('[Error! you should select file or directoy]')
-                sys.exit()
-
+                if(os.path.exisits(target)):
+                    print('[plot file : {}]'.format(target))
+                else:
+                    raise ValueError('traget does not exist')
+            color_print('[ATTENTION]','GREEN')
+            print(' [All configuration should be set by "fsrplot"]')
+            print(' [All infomation can be seen by "fsrplot.info()"]')
+            color_print('[Start IPython]','GREEN')
+            itembed()
+            color_print('[End Interactive Shell]','GREEN')
         else:
-            if(args['file'] != None):
-                file_name = args['file']
-                fsrplot = PlotManager(file_name=file_name)
-                if(args['normal']):
-                    fsrplot.plot_result(file=file_name,plot_kind='normal',log_scale=args['log_scale'])
-                elif(args['totally']):
-                    fsrplot.plot_result(file=file_name,plot_kind='totally',log_scale=args['log_scale'])
-                else:
-                    fsrplot.plot_result(file=file_name,log_scale=args['log_scale'])
-            elif(args['directory'] != None):
-                directory_name = args['directory']
-                fsrplot = PlotManager(top_directory=directory_name)
-                fsrplot.plot_result(directory=directory_name)
-            elif(args['log'] != None):
-                top_dir = args['log']
-                log_check(top_dir)
+            raise NameError('you should select file or directoy')
+
+    else:
+        if(args['file'] != None):
+            file_name = args['file']
+            fsrplot = PlotManager(file_name=file_name)
+            if(args['plot_type']):
+                fsrplot.plot_result(file=file_name,plot_type=args['plot_type'],log_scale=args['log_scale'])
             else:
-                print('[Error! No options or No targets,  must select]')
+                fsrplot.plot_result(file=file_name,log_scale=args['log_scale'])
+            fsrplot.show()
+        elif(args['directory'] != None):
+            directory_name = args['directory']
+            fsrplot = PlotManager(top_directory=directory_name)
+            fsrplot.plot_result(directory=directory_name)
+            fsrplot.show()
+        else:
+            raise KeyError('No options or No targets,  must select')
 
 if __name__ == '__main__':
     main()
