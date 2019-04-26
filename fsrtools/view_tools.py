@@ -662,7 +662,7 @@ class PlotManager:
             self._myprint.decrease_indent()
 
         elif(plot_type in ['correlation', '3d']):
-            self._myprint('[correlation or 3d plot]')
+            self._myprint('[3d plot]')
             del self._plot_type[plot_type][:]
             self._myprint.add_indent()
             self._set_fig_ax(type_dict,plot_type,plot_value,directory)
