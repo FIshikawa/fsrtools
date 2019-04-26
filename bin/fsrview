@@ -14,8 +14,7 @@ def main():
     parser.add_argument('-d','--directory',action='store',type=str,help='result direcotry')
     parser.add_argument('-f','--file',action='store',type=str,help='result file')
     parser.add_argument('-ip','--interactive_plot',action='store_true',help='Plot Interactive mode : via IPython')
-    parser.add_argument('--normal',action='store_true',help='normal plot option : with instant plot mode')
-    parser.add_argument('--totally',action='store_true',help='totally plot option : with instant plot mode')
+    parser.add_argument('-pt','--plot_type',choices=['normal','totally','hist','correlation','3d'],help='plot option : with instant plot mode')
     parser.add_argument('--log_scale',action='store_true',help='log scale plot : instant mode only')
 
     args = vars(parser.parse_args())
@@ -50,10 +49,8 @@ def main():
         if(args['file'] != None):
             file_name = args['file']
             fsrplot = PlotManager(file_name=file_name)
-            if(args['normal']):
-                fsrplot.plot_result(file=file_name,plot_kind='normal',log_scale=args['log_scale'])
-            elif(args['totally']):
-                fsrplot.plot_result(file=file_name,plot_kind='totally',log_scale=args['log_scale'])
+            if(args['plot_type']):
+                fsrplot.plot_result(file=file_name,plot_type=args['plot_type'],log_scale=args['log_scale'])
             else:
                 fsrplot.plot_result(file=file_name,log_scale=args['log_scale'])
             fsrplot.show()
