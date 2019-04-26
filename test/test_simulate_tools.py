@@ -131,7 +131,6 @@ def test_operate_experiments(set_data_for_test):
     fsrsimulate.operate_experiments(parameter_file=parameter_json,log_file=log_file,test_mode=True,command_data=command_data)
 
 
-
 def test_log_check(set_data_for_test):
     log_file = pytest.log_file
     parameter_json = pytest.parameter_json
