@@ -3,5 +3,4 @@
 from .import simulate_tools
 from .import view_tools
 from .import util
-__version__ = '0.1.0'
 
