@@ -468,6 +468,7 @@ def time_log_print(experiment_directory,n_indent=1):
             duration_time = time_info['duration']
             sentence = indent_str + '[{0}] : [start {1}] : [end {2}] : [duration {3}]'.format(directory_name,start_time,end_time,duration_time)
         else:
+            #   todo ongoing plot : read parameter json and detect abnormal termination
             ongoing_number = len([x for x in os.listdir(experiment_directory) if os.path.isdir(os.path.join(experiment_directory,x))])
             nowtime = datetime.datetime.now()
             diff_time = nowtime - datetime.datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
