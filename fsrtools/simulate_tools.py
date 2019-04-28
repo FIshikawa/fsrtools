@@ -464,19 +464,17 @@ def time_log_print(experiment_directory,n_indent=1):
         else:
             start_time = 'wating'
         if('end_time' in time_info.keys() and len(time_info['end_time']) > 0):
-          end_time = time_info['end_time']
-          duration_time = time_info['duration']
-          sentence = indent_str + '[{0}] : [start {1}] : [end {2}] : [duration {3}]'.format(directory_name,start_time,end_time,duration_time)
-          if('remark' in time_info.keys()):
-              sentenec += '[remark : {}]'.format(time_info['remark'])
+            end_time = time_info['end_time']
+            duration_time = time_info['duration']
+            sentence = indent_str + '[{0}] : [start {1}] : [end {2}] : [duration {3}]'.format(directory_name,start_time,end_time,duration_time)
         else:
-          ongoing_number = len([x for x in os.listdir(experiment_directory) if os.path.isdir(os.path.join(experiment_directory,x))])
-          nowtime = datetime.datetime.now()
-          diff_time = nowtime - datetime.datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
-          sentence = indent_str + '[{0}] : [start {1}] :'.format(directory_name,start_time)\
-                              + colors('RED') \
-                              + ' [now  number-{0} ({0}/{1}) {2} past]'.format(ongoing_number,len(total_combinations),str(diff_time))\
-                              + colors('END')
+            ongoing_number = len([x for x in os.listdir(experiment_directory) if os.path.isdir(os.path.join(experiment_directory,x))])
+            nowtime = datetime.datetime.now()
+            diff_time = nowtime - datetime.datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
+            sentence = indent_str + '[{0}] : [start {1}] :'.format(directory_name,start_time)\
+                                + colors('RED') \
+                                + ' [now  number-{0} ({0}/{1}) {2} past]'.format(ongoing_number,len(total_combinations),str(diff_time))\
+                                + colors('END')
         sentence += '\n' + indent_str + '  [command_name : {0}] [number of simulations : {1}] '.format(command_name,max(len(total_combinations),1)) 
         if(len(total_combinations) > 0):
             sentence += '[change params :'
