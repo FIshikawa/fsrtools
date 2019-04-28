@@ -66,15 +66,15 @@ def test_result_info(set_data_for_test):
 
 def test_directory_name_set(set_data_for_test):
     directory_name = pytest.plot_manager._directory_name_set(directory=1)
-    assert 'number-1' in directory_name
-    directory_name = pytest.plot_manager._directory_name_set(directory='number-1')
-    assert 'number-1' in directory_name
+    assert 'number-' in directory_name
+    directory_name = pytest.plot_manager._directory_name_set(directory='number-')
+    assert 'number-' in directory_name
     directory_name = pytest.plot_manager._directory_name_set(file='number-1/file.dat')
     assert 'number-1' in directory_name
 
 def test_file_path_set(set_data_for_test):
     file_path = pytest.plot_manager._file_path_set('result.dat',1)
-    assert 'number-1' in file_path
+    assert 'number-' in file_path
 
 def test_check_json_file(set_data_for_test):
     directory_name = pytest.plot_manager._directory_name_set(directory=1)
