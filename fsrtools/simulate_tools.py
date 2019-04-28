@@ -184,15 +184,16 @@ def execute_simulation(command_name,simulate_params,result_directory,log_write,c
     p.wait()
     log_open.close()
     return_value = p.wait()
-    if(return_value != 0):
-        log_write('[Abnormal termination detected : return_value : {}]'.format(return_value))
-        log_write.reset_indent()
-        log_write('[Error End !]')
-        raise ValueError('[Abnormal termination detected : return_value : {}]'.format(return_value))
-
     log_write('[finish  : {}]'.format(stop_watch.end()))
     param_dict['time_info']['end_time'] = stop_watch.end_time()
     param_dict['time_info']['duration'] = stop_watch.duration()
+    if(return_value != 0):
+        param_dict['time_info']['remark'] = 'Abnormal termination : return_value : {}'.format(return_value)
+        log_write('[Abnormal termination detected : return_value : {}]'.format(return_value))
+        log_write.reset_indent()
+        log_write('[Error End !]')
+        setting_manager.json_set(param_dict,parameter_file_each_simulation)
+        raise ValueError('[Abnormal termination detected : return_value : {}]'.format(return_value))
     setting_manager.json_set(param_dict,parameter_file_each_simulation)
 
 
@@ -275,7 +276,8 @@ def set_simulate_params(simulate_params,combination):
             for key_t in simulate_params.keys():
                 if(key_t in simulate_params[key]):
                     local_variable_dict[key_t] = simulate_params[key_t]
-            simulate_params_temp[key] = eval(simulate_params[key],globals(),local_variable_dict)
+            calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
+            simulate_params_temp[key] = integer_filter(calculated_value)
     return simulate_params_temp
 
 
@@ -463,8 +465,10 @@ def time_log_print(experiment_directory,n_indent=1):
             start_time = 'wating'
         if('end_time' in time_info.keys() and len(time_info['end_time']) > 0):
           end_time = time_info['end_time']
-          diff_time = datetime.datetime.strptime(end_time, '%Y/%m/%d %H:%M:%S') - datetime.datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
-          sentence = indent_str + '[{0}] : [start {1}] : [end {2}] : [duration {3}]'.format(directory_name,start_time,end_time,str(diff_time))
+          duration_time = time_info['duration']
+          sentence = indent_str + '[{0}] : [start {1}] : [end {2}] : [duration {3}]'.format(directory_name,start_time,end_time,duration_time)
+          if('remark' in time_info.keys()):
+              sentenec += '[remark : {}]'.format(time_info['remark'])
         else:
           ongoing_number = len([x for x in os.listdir(experiment_directory) if os.path.isdir(os.path.join(experiment_directory,x))])
           nowtime = datetime.datetime.now()
