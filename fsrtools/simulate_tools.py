@@ -18,7 +18,7 @@ def _commands_json_file(test=False):
         return os.path.join(fsrtools.__path__[0],'config/commands.json')
 
 
-def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test_mode=False,command_data=None):
+def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test_mode=False,command_data=None,structured_output=True):
     current_directory = os.getcwd()
 
     if(test_mode):
@@ -62,9 +62,13 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
                 for key_tt in json_data['experiments'][key][key_t].keys():
                     log_write('   {0} : {1}'.format(key_tt, json_data['experiments'][key][key_t][key_tt]))
 
-    experiment_directory = os.path.join(json_data['experiment_dir'], stop_watch.start_time(format='%Y-%m-%d-%H-%M-%S') + '/')
-    log_write('[set result output directory : {}]'.format(experiment_directory))
-    setting_manager.set_directory(experiment_directory)
+    if(structured_output):
+        experiment_directory = os.path.join(json_data['experiment_dir'], stop_watch.start_time(format='%Y-%m-%d-%H-%M-%S') + '/')
+        log_write('[set result output directory : {}]'.format(experiment_directory))
+        setting_manager.set_directory(experiment_directory)
+    else:
+        experiment_directory = json_data['experiment_dir']
+        log_write('[structured output mode off : all results output in {} directly]'.format(experiment_directory))
 
     json_data['time_info'] = {}
     json_data['time_info']['start_time'] = stop_watch.start_time()
@@ -92,7 +96,7 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
                 json_data['experiments'][key]['simulate_params'][key_temp] = value_dict_temp[key_temp] 
 
         json_data['experiments'][key]['experiment_params']['experiment_dir'] = experiment_directory
-        operate_simulations(json_data['experiments'][key],experiment_tag,log_write,command_data)
+        operate_simulations(json_data['experiments'][key],experiment_tag,log_write,command_data,structured_output=structured_output)
         log_write.decrease_indent()
         log_write('[{0}][end experiment : {1} : lap time : {2}]'.format(key,stop_watch.lap_end(),stop_watch.lap_time()))
         previous_key = key
@@ -105,7 +109,7 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
     shutil.copy(log_file,os.path.join(experiment_directory,'log.dat'))
 
 
-def operate_simulations(param_dict_original,experiment_tag,log_write,command_data):
+def operate_simulations(param_dict_original,experiment_tag,log_write,command_data,structured_output=True):
     stop_watch = StopWatch()
     setting_manager = SettingManager(log_write) 
 
@@ -118,9 +122,12 @@ def operate_simulations(param_dict_original,experiment_tag,log_write,command_dat
     log_write('[check experiment directory : {}]'.format(experiment_directory))
     setting_manager.set_directory(experiment_directory)
 
-    simulate_directory = os.path.join(experiment_directory,experiment_tag + '/') 
+    if(structured_output):
+        simulate_directory = os.path.join(experiment_directory,experiment_tag + '/') 
+        setting_manager.set_directory(simulate_directory)
+    else:
+        simulate_directory = experiment_directory 
     log_write('[simulate directory : {}]'.format(simulate_directory))
-    setting_manager.set_directory(simulate_directory)
     experiment_params['experiment_dir'] = simulate_directory
     
     param_dict_original['time_info'] = {}
@@ -148,8 +155,11 @@ def operate_simulations(param_dict_original,experiment_tag,log_write,command_dat
             simulate_params = simulate_params_original 
         log_write('[simulation : number-{}]'.format(simulate_number))
         log_write.add_indent()
-        result_directory = os.path.join(simulate_directory,'number-' + str(simulate_number) + '/')
-        setting_manager.set_directory(result_directory)
+        if(structured_output):
+            result_directory = os.path.join(simulate_directory,'number-' + str(simulate_number) + '/')
+            setting_manager.set_directory(result_directory)
+        else:
+            result_directory = simulate_directory
         execute_simulation(command_name,simulate_params,result_directory,log_write,command_data)
         simulate_number += 1
         log_write.decrease_indent()
