@@ -12,9 +12,10 @@ from scipy import stats
 import math
 import numpy as np
 from fsrtools.util import LogManager
+from fsrtools.simulate_tools import set_total_combinations
 
 class PlotManager:
-    def __init__(self,top_directory=None,file_name=None):
+    def __init__(self,top_directory=None,file=None):
         self._plot_type_list = ['hist','correlation','3d','normal','totally']
         self.ax = {}
         self.fig = {}
@@ -30,13 +31,13 @@ class PlotManager:
         self._config_data_map= []
         self._myprint = LogManager(cout_tag=True)
 
-        if(top_directory is not None):
+        if(top_directory):
             self._top_directory = os.path.normpath(top_directory)
             self._config_data_map, self._result_data_map  = set_data_map(top_directory)
-        if(file_name is not None):
-            top_directory = self._directory_name_set(file=file_name)
+        if(file):
+            top_directory = self._directory_name_set(file=file)
             self._top_directory = os.path.normpath(top_directory)
-            file_in_dir_name = os.path.dirname(file_name)
+            file_in_dir_name = os.path.dirname(file)
             self._config_data_map, self._result_data_map  = set_data_map(top_directory)
 
     def result_info(self,whole_info=False):
@@ -53,19 +54,38 @@ class PlotManager:
             self._myprint.reset_indent()
         else:
             print('[result info]')
-            for i, element in enumerate(self._config_data_map):
-                print('  [experiment date: {}]'.format(element['date']))
-                if(element['variable_parameters']):
-                    print('    [common parameters] : ',end='')
-                    for key, value in element['common_parameters'].items():
-                        print('{0} : {1}, '.format(key, value),end='')
-                    print('')
-                    for j, result_data in enumerate(self._result_data_map):
-                        if(result_data['common_parameters'] == i):
-                            print('      [{}] '.format(j+1),end='')
-                            for key, value in result_data['variable_parameters'].items():
-                                print('{0} : {1} '.format(key,value),end='') 
-                            print('')
+            log_write = LogManager(cout_tag=True)
+            log_write.add_indent()
+            if(self._config_data_map):
+                for i, element in enumerate(self._config_data_map):
+                    log_write('[experiment date: {}]'.format(element['date']))
+                    log_write.add_indent()
+                    if(element['variable_parameters']):
+                        log_write('[common parameters] : ',end='')
+                        for key, value in element['common_parameters'].items():
+                            log_write('{0} : {1}, '.format(key, value),end='')
+                        log_write('')
+                        log_write.add_indent()
+                        counter = 0
+                        for result_data in self._result_data_map:
+                            if(result_data['common_parameters'] == i):
+                                counter += 1
+                                log_write('[{}] '.format(counter),end='')
+                                for key, value in result_data['variable_parameters'].items():
+                                    log_write('{0} : {1} '.format(key,value),end='') 
+                                log_write('')
+                                log_write.add_indent()
+                                log_write('[files] : {}'.format(result_data['files']))
+                                log_write.decrease_indent()
+                        log_write.decrease_indent()
+                    log_write.decrease_indent()
+                log_write.decrease_indent()
+            else:
+                for i, element in enumerate(self._result_data_map):
+                    log_write('[{0}][directory] : {1}'.format(i+1,element['directory']))
+                    log_write.add_indent()
+                    log_write('[files] : {} '.format(element['files']))
+                    log_write.decrease_indent()
 
     def info(self):
         print('[infomation]')
@@ -316,7 +336,7 @@ class PlotManager:
                     directory_name = os.getcwd()
         elif(directory is not None):
             if(isinstance(directory, int)): 
-                directory_name = self._result_data_map[directory]['directory']
+                directory_name = self._result_data_map[directory-1]['directory']
             else:
                 directory_name = directory
         else:
@@ -326,7 +346,7 @@ class PlotManager:
     def _file_path_set(self,file,directory):
         file_path = ''
         if(isinstance(directory,int)):
-            directory_name = self._result_data_map[directory]['directory']
+            directory_name = self._result_data_map[directory-1]['directory']
         else:
             directory_name = directory
         file_path = os.path.join(directory_name, file)
@@ -1064,13 +1084,15 @@ def set_data_map(top_directory):
         current_dir_list = current_directory.split('/') 
         indent = len(current_dir_list)
 
-        if('experiment_' in os.path.basename(current_directory)):
+        if('experiment_' in os.path.basename(current_directory) or included_directory):
             json_data = json.load(open(os.path.join(current_directory,'parameter.json'),'r'))
             config_data_map.append({})
             config_data_map[-1]['date'] = os.path.dirname(current_directory)
             config_data_map[-1]['variable_parameters'] = []
             config_data_map[-1]['common_parameters'] = {'command_name':json_data['experiment_params']['command_name']}
-            for key, value in json_data['simulate_params'].items():
+            print_temp = lambda sentence : sentence
+            simulate_params, total_combinations = set_total_combinations(json_data['simulate_params'],print_temp)
+            for key, value in simulate_params.items():
                 if(not 'dir' in key and not 'time_info' in key):
                     if(isinstance(value, list) or isinstance(value,str)):
                         config_data_map[-1]['variable_parameters'].append(key)
@@ -1088,7 +1110,7 @@ def set_data_map(top_directory):
             result_data_map.append({})
             result_data_map[-1]['files'] = files
             result_data_map[-1]['directory'] = current_directory
-            if(json_data):
+            if(json_data and config_data_map):
                 result_data_map[-1]['date'] = config_data_map[-1]['date']
                 result_data_map[-1]['common_parameters'] = len(config_data_map) - 1
                 if(config_data_map[-1]['variable_parameters']):

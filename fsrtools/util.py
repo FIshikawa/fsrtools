@@ -35,6 +35,7 @@ class LogManager:
                 os.remove(log_file)
         self.log_file = log_file
         self.indent = n_indent
+        self.temp_indent = n_indent
         self.cout_tag = cout_tag
 
     def __indent(self):
@@ -45,34 +46,41 @@ class LogManager:
 
     def reset_indent(self):
         self.indent = 0
+        self.temp_indent = 0
 
     def add_indent(self,increase_number=0):
         if(increase_number):
             self.indent += increase_number
         else:
             self.indent += 1
+        self.temp_indent = self.indent
 
     def decrease_indent(self,decrease_number=0):
         if(decrease_number):
             self.indent -= decrease_number
         else:
             self.indent -= 1
+        self.temp_indent = self.indent
 
-    def __call__(self,sentence,log_file_temp=None):
+    def __call__(self,sentence,log_file_temp=None,end='\n'):
         if(isinstance(sentence,str)):
             sentence = self.__indent() + sentence
         else:
             sentence = self.__indent() + '{}'.format(sentence)
         if(log_file_temp is None and self.log_file is not None):
             f = open(self.log_file,'a')
-            f.write(sentence + '\n')
+            f.write(sentence + end)
             f.close()
         elif(log_file_temp is not None):
             f = open(log_file_temp,'a')
-            f.write(sentence + '\n')
+            f.write(sentence + end)
             f.close()
         if(self.cout_tag):
-            print(sentence)
+            print(sentence,end=end)
+        if(end != '\n'):
+            self.indent = 0
+        else:
+            self.indent = self.temp_indent
 
     def progress_bar(self,loop,loop_max,add_sentence=None,indent=0):
         sys.stdout.write('\r')
