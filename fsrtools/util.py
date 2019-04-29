@@ -27,14 +27,14 @@ class LogManager:
 
     """
 
-    def __init__(self,indent=0,log_file=None,cout_tag=False):
+    def __init__(self,n_indent=0,log_file=None,cout_tag=False):
         if(cout_tag is False and log_file is None):
             raise ValueError('log_file is defined nesessarily when cout_tag is False.')
         if(log_file is not None):
             if(os.path.exists(log_file)):
                 os.remove(log_file)
         self.log_file = log_file
-        self.indent = indent
+        self.indent = n_indent
         self.cout_tag = cout_tag
 
     def __indent(self):
