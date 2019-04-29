@@ -33,6 +33,7 @@ def main():
             color_print('[ATTENTION]','GREEN')
             print(' [All configuration should be set by "fsrplot"]')
             print(' [All infomation can be seen by "fsrplot.info()"]')
+            print(' [Help option is available : "fsrplot.help()"]')
             color_print('[Start IPython]','GREEN')
             itembed()
             color_print('[End Interactive Shell]','GREEN')
