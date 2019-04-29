@@ -22,20 +22,14 @@ def main():
     if(args['interactive_plot']):
         itembed = InteractiveShellEmbed()
         color_print('[Interactive Shell Mode]','GREEN')
-        if(args['directory'] != None or args['file'] != None):
-            if(args['directory'] != None):
-                target = args['directory']
-                if(os.path.isdir(target)):
-                    fsrplot = PlotManager(top_directory=target) # for complement function
-                else:
-                    raise ValueError('traget is not directory')
-                print('[Info of fsrplot]')
-                fsrplot.info()
+        if(args['directory']):
+            target = args['directory']
+            if(os.path.isdir(target)):
+                fsrplot = PlotManager(top_directory=target) 
             else:
-                if(os.path.exisits(target)):
-                    print('[plot file : {}]'.format(target))
-                else:
-                    raise ValueError('traget does not exist')
+                raise NameError('{} does not exisits'.format(target))
+            print('[Info of fsrplot]')
+            fsrplot.info()
             color_print('[ATTENTION]','GREEN')
             print(' [All configuration should be set by "fsrplot"]')
             print(' [All infomation can be seen by "fsrplot.info()"]')
@@ -43,24 +37,23 @@ def main():
             itembed()
             color_print('[End Interactive Shell]','GREEN')
         else:
-            raise NameError('you should select file or directoy')
-
+            raise ValueError('you should input directory')
     else:
-        if(args['file'] != None):
-            file_name = args['file']
-            fsrplot = PlotManager(file_name=file_name)
+        if(args['file']):
+            file = args['file']
+            fsrplot = PlotManager(file=file)
             if(args['plot_type']):
-                fsrplot.plot_result(file=file_name,plot_type=args['plot_type'],log_scale=args['log_scale'])
+                fsrplot.plot_result(file=file,plot_type=args['plot_type'],log_scale=args['log_scale'])
             else:
-                fsrplot.plot_result(file=file_name,log_scale=args['log_scale'])
+                fsrplot.plot_result(file=file,log_scale=args['log_scale'])
             fsrplot.show()
-        elif(args['directory'] != None):
+        elif(args['directory']):
             directory_name = args['directory']
             fsrplot = PlotManager(top_directory=directory_name)
             fsrplot.plot_result(directory=directory_name)
             fsrplot.show()
         else:
-            raise KeyError('No options or No targets,  must select')
+            raise KeyError('No input directory and file,  must select')
 
 if __name__ == '__main__':
     main()
