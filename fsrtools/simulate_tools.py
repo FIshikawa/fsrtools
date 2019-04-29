@@ -433,32 +433,38 @@ def log_check(top_directory):
 
 
 def plot_log(target_directory):
-    print('[read whole parameter]')
+    log_write = LogManager(cout_tag=True)
+    log_write('[read whole parameter]')
     json_file = open(os.path.join(target_directory,'parameter.json'),'r')
     num_experiments = len(json.load(json_file)['experiments'])
-    print('[number of experiments : {}]'.format(num_experiments))
+    log_write('[number of experiments : {}]'.format(num_experiments))
+    log_write.add_indent()
     for i in range(num_experiments):
         experiment_directory = os.path.join(target_directory,'experiment_' + str(i+1))
-        time_log_print(experiment_directory)
+        if(os.path.exists(experiment_directory)):
+            json_file = open(os.path.join(experiment_directory,'parameter.json'),'r')
+            json_data = json.load(json_file)
+            time_log_print(experiment_directory)
+# todo : tim_log_print iteratelly : walking direcotry in number direcotry and experiments directory
+        else:
+            log_write('[{}] : [yet execute]'.format(directory_name)) 
+        print(sentence)
 
 
 def time_log_print(experiment_directory,n_indent=1):
+    # todo : change format for iterable plot
     sentence = ''
     indent_str = ''
     sub_indent_str = ''
     directory_name = os.path.dirname(os.path.join(experiment_directory,''))
-    for i in range(n_indent):
-        indent_str += '  ' 
-    for i in range(n_indent+1):
-        sub_indent_str += '  '
     if(os.path.exists(experiment_directory)):
         json_file = open(os.path.join(experiment_directory,'parameter.json'),'r')
         json_data = json.load(json_file)
-        time_info = json_data['time_info']
         simulate_params = json_data['simulate_params']
         command_name = json_data['experiment_params']['command_name']
         print_temp = lambda sentence : sentence
         simulate_params, total_combinations = set_total_combinations(simulate_params,print_temp)
+        time_info = json_data['time_info']
         if('start_time' in time_info.keys() and len(time_info['start_time']) > 0):
             start_time = time_info['start_time']
         else:
@@ -483,9 +489,4 @@ def time_log_print(experiment_directory,n_indent=1):
                 if(isinstance(simulate_params[key],list)):
                     sentence += ' ' +key + ','
             sentence += ']'
-    else:
-        sentence += indent_str + '[{}] : [yet execute]'.format(directory_name) 
-    print(sentence)
-
-
 
