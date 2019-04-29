@@ -2,15 +2,16 @@ import sys
 import os
 import json
 import copy
+import datetime
+import math
+import numpy as np
+from scipy import stats
+from scipy.stats import norm
+from scipy.stats import cauchy
 from matplotlib import cm
 import matplotlib.pyplot as plt 
 import matplotlib.ticker as ptick
-from scipy.stats import norm
-from scipy.stats import cauchy
 from mpl_toolkits.mplot3d import axes3d
-from scipy import stats
-import math
-import numpy as np
 from fsrtools.util import LogManager
 from fsrtools.simulate_tools import set_total_combinations
 
@@ -205,6 +206,18 @@ class PlotManager:
             self._myprint('[{0}] : {1}'.format(key,type_dict[key]))
         self._myprint.decrease_indent()
         return data, type_dict, plot_type
+
+    def time_result(self):
+        print('return time results and parameter data')
+        time_data = {}
+        parameter_data = {}
+        for i, result_data in enumerate(self._result_data_map):
+            if('duration' in result_data['time_info'] and not 'remark' in result_data['time_info']):
+                time_data[i] = result_data['time_info']['duration']
+                parameter_data[i] = result_data['variable_parameters']
+            else:
+                print('[{}-th result is failed simulation : no time result]'.format(i))
+        return parameter_data, time_data
 
     def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,log_scale=False):
         self._myprint.reset_indent()
@@ -1110,13 +1123,15 @@ def set_data_map(top_directory):
             result_data_map.append({})
             result_data_map[-1]['files'] = files
             result_data_map[-1]['directory'] = current_directory
-            if(json_data and config_data_map):
-                result_data_map[-1]['date'] = config_data_map[-1]['date']
-                result_data_map[-1]['common_parameters'] = len(config_data_map) - 1
-                if(config_data_map[-1]['variable_parameters']):
-                    result_data_map[-1]['variable_parameters'] = {} 
-                    for key in config_data_map[-1]['variable_parameters']:
-                        result_data_map[-1]['variable_parameters'][key] = json_data['simulate_params'][key]
+            if(json_data):
+                result_data_map[-1]['time_info'] = json_data['time_info']
+                if(config_data_map):
+                    result_data_map[-1]['date'] = config_data_map[-1]['date']
+                    result_data_map[-1]['common_parameters'] = len(config_data_map) - 1
+                    if(config_data_map[-1]['variable_parameters']):
+                        result_data_map[-1]['variable_parameters'] = {} 
+                        for key in config_data_map[-1]['variable_parameters']:
+                            result_data_map[-1]['variable_parameters'][key] = json_data['simulate_params'][key]
 
     return copy.deepcopy(config_data_map), copy.deepcopy(result_data_map) 
 

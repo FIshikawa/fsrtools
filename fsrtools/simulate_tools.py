@@ -465,7 +465,6 @@ def time_log_print(directory_path,n_indent=1):
         else:
             ongoing_number = len([x for x in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path,x))])
             nowtime = datetime.datetime.now()
-            diff_time = nowtime - datetime.datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
             if(ongoing_number > 0):
                 simulate_params = json_data['simulate_params']
                 command_name = json_data['experiment_params']['command_name']
@@ -481,6 +480,7 @@ def time_log_print(directory_path,n_indent=1):
                             sentence += ' ' +key + ','
                     sentence += ']'
             else:
+                diff_time = nowtime - datetime.datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
                 sentence = '[{0}] : [start {1}] :'.format(directory_name,start_time)\
                                 + colors('RED') \
                                 + ' [past {}] '.format(str(diff_time))\
