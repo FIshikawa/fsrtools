@@ -36,7 +36,7 @@ class PlotManager:
             self._top_directory = os.path.normpath(top_directory)
             self._config_data_map, self._result_data_map  = set_data_map(top_directory)
         if(file):
-            top_directory = self._directory_name_set(file=file)
+            top_directory = self._directory_name_set(file_path=file)
             self._top_directory = os.path.normpath(top_directory)
             file_in_dir_name = os.path.dirname(file)
             self._config_data_map, self._result_data_map  = set_data_map(top_directory)
@@ -509,8 +509,6 @@ class PlotManager:
         total_number_of_plot = 0
 
         if(plot_value is None and plot_type != 'totally'):
-            self.fig[plot_type] = plt.figure(figsize=(self.basic_size['window_large']*1.618,self.basic_size['window_large']))
-            self.fig[plot_type].subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.15, hspace=0.15)
             if(plot_type == 'normal'):
                 total_number_of_plot = len(type_dict['ACF_list']) \
                                         + len(type_dict['With_error_list']) \
@@ -523,6 +521,8 @@ class PlotManager:
                 total_number_of_plot = 1
             self._myprint('[total number of plot : {}]'.format(total_number_of_plot))
             if(total_number_of_plot != 1):
+                self.fig[plot_type] = plt.figure(figsize=(self.basic_size['window_large']*1.618,self.basic_size['window_large']))
+                self.fig[plot_type].subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.15, hspace=0.15)
                 if((total_number_of_plot % 3) == 0):
                     vertical_length = 3
                     horizontal_length = int(total_number_of_plot / vertical_length) 
