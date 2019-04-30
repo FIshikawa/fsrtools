@@ -57,6 +57,7 @@ class PlotManager:
             print('[result info]')
             log_write = LogManager(cout_tag=True)
             log_write.add_indent()
+            counter = 0
             if(self._config_data_map):
                 for i, element in enumerate(self._config_data_map):
                     log_write('[experiment date: {}]'.format(element['date']))
@@ -67,7 +68,6 @@ class PlotManager:
                             log_write('{0} : {1}, '.format(key, value),end='')
                         log_write('')
                         log_write.add_indent()
-                        counter = 0
                         for result_data in self._result_data_map:
                             if(result_data['common_parameters'] == i):
                                 counter += 1
@@ -173,9 +173,11 @@ class PlotManager:
             plt.close()
 
     def dissect_result(self,file=None, directory=None):
-        directory_name = self._directory_name_set(file,directory)
+        directory_name = self._directory_name_set(directory=directory)
+        file_path = self._file_path_set(file,directory)
+        print('[directory name] : {}'.format(directory_name))
         self._check_json_file(directory_name)
-        data, type_dict, plot_type = self.data_load(file=file,directory=directory)
+        data, type_dict, plot_type = self.data_load(file=file_path)
         self._myprint('[check data shape]')
         self._myprint.add_indent()
         for key in data.keys():
@@ -233,7 +235,7 @@ class PlotManager:
                 file_path = file
             if(not os.path.exists(file_path)):
                 raise NameError('{} does not exist'.format(file_path)) 
-            directory_name = self._directory_name_set(file=file_path)
+            directory_name = self._directory_name_set(file_path=file_path)
             json_data = self._check_json_file(directory_name)
             self._myprint.add_indent()
             if(json_data is None and plot_type is None):
@@ -339,11 +341,11 @@ class PlotManager:
                 elif(axis_list.index(key) == 2):
                     self.ax[plot_type][value_name].set_zlabel(key)
 
-    def _directory_name_set(self,file=None,directory=None):
+    def _directory_name_set(self,file_path=None,directory=None):
         directory_name = ''
-        if(file is not None):
-            if(isinstance(file, str)):
-                file_path = os.path.normpath(file)
+        if(file_path is not None):
+            if(isinstance(file_path, str)):
+                file_path = os.path.normpath(file_path)
                 directory_name = os.path.dirname(file_path)
                 if(not directory_name):
                     directory_name = os.getcwd()
@@ -1097,20 +1099,22 @@ def set_data_map(top_directory):
         current_dir_list = current_directory.split('/') 
         indent = len(current_dir_list)
 
-        if('experiment_' in os.path.basename(current_directory) or included_directory):
-            json_data = json.load(open(os.path.join(current_directory,'parameter.json'),'r'))
-            config_data_map.append({})
-            config_data_map[-1]['date'] = os.path.dirname(current_directory)
-            config_data_map[-1]['variable_parameters'] = []
-            config_data_map[-1]['common_parameters'] = {'command_name':json_data['experiment_params']['command_name']}
-            print_temp = lambda sentence : sentence
-            simulate_params, total_combinations = set_total_combinations(json_data['simulate_params'],print_temp)
-            for key, value in simulate_params.items():
-                if(not 'dir' in key and not 'time_info' in key):
-                    if(isinstance(value, list) or isinstance(value,str)):
-                        config_data_map[-1]['variable_parameters'].append(key)
-                    else:
-                        config_data_map[-1]['common_parameters'][key] = value
+        if('experiment_' in os.path.basename(current_directory)):
+            json_path = os.path.join(current_directory,'parameter.json')
+            if(os.path.exists(json_path)):
+                json_data = json.load(open(json_path,'r'))
+                config_data_map.append({})
+                config_data_map[-1]['date'] = os.path.dirname(current_directory)
+                config_data_map[-1]['variable_parameters'] = []
+                config_data_map[-1]['common_parameters'] = {'command_name':json_data['experiment_params']['command_name']}
+                print_temp = lambda sentence : sentence
+                simulate_params, total_combinations = set_total_combinations(json_data['simulate_params'],print_temp)
+                for key, value in simulate_params.items():
+                    if(not 'dir' in key and not 'time_info' in key):
+                        if(isinstance(value, list) or isinstance(value,str)):
+                            config_data_map[-1]['variable_parameters'].append(key)
+                        else:
+                            config_data_map[-1]['common_parameters'][key] = value
 
         if(not included_directory or 'number' in os.path.basename(current_directory)):
             result_files = []
