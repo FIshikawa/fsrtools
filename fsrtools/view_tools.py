@@ -28,18 +28,18 @@ class PlotManager:
         self._label = ''
         self._buffer_data = {}
         self._top_directory = ''
-        self._result_data_map = []
+        self.result_data_map = []
         self._config_data_map= []
         self._myprint = LogManager(cout_tag=True)
 
         if(top_directory):
             self._top_directory = os.path.normpath(top_directory)
-            self._config_data_map, self._result_data_map  = set_data_map(top_directory)
+            self._config_data_map, self.result_data_map  = set_data_map(top_directory)
         if(file):
             top_directory = self._directory_name_set(file_path=file)
             self._top_directory = os.path.normpath(top_directory)
             file_in_dir_name = os.path.dirname(file)
-            self._config_data_map, self._result_data_map  = set_data_map(top_directory)
+            self._config_data_map, self.result_data_map  = set_data_map(top_directory)
 
     def result_info(self,whole_info=False):
         if(whole_info):
@@ -68,7 +68,7 @@ class PlotManager:
                             log_write('{0} : {1}, '.format(key, value),end='')
                         log_write('')
                         log_write.add_indent()
-                        for result_data in self._result_data_map:
+                        for result_data in self.result_data_map:
                             if(result_data['common_parameters'] == i):
                                 counter += 1
                                 log_write('[{}] '.format(counter),end='')
@@ -82,7 +82,7 @@ class PlotManager:
                     log_write.decrease_indent()
                 log_write.decrease_indent()
             else:
-                for i, element in enumerate(self._result_data_map):
+                for i, element in enumerate(self.result_data_map):
                     log_write('[{0}][directory] : {1}'.format(i+1,element['directory']))
                     log_write.add_indent()
                     log_write('[files] : {} '.format(element['files']))
@@ -213,7 +213,7 @@ class PlotManager:
         print('return time results and parameter data')
         time_data = {}
         parameter_data = {}
-        for i, result_data in enumerate(self._result_data_map):
+        for i, result_data in enumerate(self.result_data_map):
             if('duration' in result_data['time_info'] and not 'remark' in result_data['time_info']):
                 time_data[i] = result_data['time_info']['duration']
                 parameter_data[i] = result_data['variable_parameters']
@@ -351,7 +351,7 @@ class PlotManager:
                     directory_name = os.getcwd()
         elif(directory is not None):
             if(isinstance(directory, int)): 
-                directory_name = self._result_data_map[directory-1]['directory']
+                directory_name = self.result_data_map[directory-1]['directory']
             else:
                 directory_name = directory
         else:
@@ -361,7 +361,7 @@ class PlotManager:
     def _file_path_set(self,file,directory):
         file_path = ''
         if(isinstance(directory,int)):
-            directory_name = self._result_data_map[directory-1]['directory']
+            directory_name = self.result_data_map[directory-1]['directory']
         else:
             directory_name = directory
         file_path = os.path.join(directory_name, file)
@@ -603,7 +603,7 @@ class PlotManager:
                 raise KeyError('{} is not in {} plots'.format(plot_value,plot_type))
             else:
                 if(isinstance(directory, int)): 
-                    for key, value in self._result_data_map[directory]['variable_parameters'].items():
+                    for key, value in self.result_data_map[directory]['variable_parameters'].items():
                         self._label = '{0} : {1}, '.format(key, value)
         self._myprint.decrease_indent()
 
