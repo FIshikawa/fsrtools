@@ -69,7 +69,7 @@ def test_directory_name_set(set_data_for_test):
     assert 'number-' in directory_name
     directory_name = pytest.plot_manager._directory_name_set(directory='number-')
     assert 'number-' in directory_name
-    directory_name = pytest.plot_manager._directory_name_set(file='number-1/file.dat')
+    directory_name = pytest.plot_manager._directory_name_set(file_path='number-1/file.dat')
     assert 'number-1' in directory_name
 
 def test_file_path_set(set_data_for_test):
