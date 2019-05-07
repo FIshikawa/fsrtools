@@ -487,6 +487,8 @@ class PlotManager:
                     type_dict['3d_plot'].append(key + '_3d_plot')
                     type_dict['2d_plot'].append(key + '_2d_plot')
                     data[key] = data_raw[:,[x for x in range(len(value_keys)) if key in value_keys[x]]]
+            else:
+                raise KeyError('input plot_type is not expeceted')
 
         elif(plot_type == 'totally'):
             type_dict = {'y_list' : [],
@@ -666,7 +668,6 @@ class PlotManager:
                                                      data[value_name]['hist'],
                                                      data[type_dict['y_axis']],
                                                      self.ax[plot_type][key],
-                                                     n_bin=100,
                                                      N_plot=10,
                                                      label=type_dict['y_axis']
                                                      )
@@ -686,7 +687,6 @@ class PlotManager:
                                            data[value_name]['hist'],
                                            data[type_dict['y_axis']],
                                            self.ax[plot_type][key],
-                                           n_bin=100,
                                            N_plot=10
                                            )
                         self.ax[plot_type][key].set_xlabel(value_name)
@@ -903,10 +903,12 @@ class PlotManager:
         v_max = data_range.max()
         v_min = data_range.min()
         dv = data_range[1] - data_range[0]
+        self._myprint('[dv : {}]'.format(dv))
         y_value = np.zeros(n_bin)
         normalizer = 0
         for i in range(n_bin):
             normalizer += dv * data_hist[i]
+        self._myprint('[normalizer : {}]'.format(normalizer))
         y_value = data_hist / normalizer 
         if(label == None):
             label = 'unmodify'
@@ -914,8 +916,14 @@ class PlotManager:
 
     def _process_hist_plot(self,data_range,data_hist,ax,n_bin=0,label=None):
         self._myprint("[modified hist plot]")
-        if (n_bin == 0):
-            n_bin = 100
+        if(n_bin == 0):
+            self._myprint('[not input n_bin, automatically set]')
+            if(n_bin > 10000):
+                n_bin = 100
+                self._myprint('[detect n_bin is over 10000, set n_bin 100]')
+            else:
+                n_bin = len(data_range)
+        self._myprint('[n_bin : {}]'.format(n_bin))
         total_number = np.sum(data_hist)
         total_number = int(total_number)
         hist,v_domain,dv= self._calc_hist(data_range,data_hist,n_bin)
@@ -957,11 +965,14 @@ class PlotManager:
             loop_max = int(len(data_domain))
         else:
             loop_max = N_plot
-        if(n_bin==0):
-            n_bin = len(data_range[:,0])
-            self._myprint('[set n_bin : {}]'.format(n_bin))
-        else:
-            self._myprint('[n_bin input :{}]'.format(n_bin))
+        if(n_bin == 0):
+            self._myprint('[not input n_bin, automatically set]')
+            if(n_bin > 10000):
+                n_bin = 100
+                self._myprint('[detect n_bin is over 10000, set n_bin 100]')
+            else:
+                n_bin = len(data_range)
+        self._myprint('[n_bin : {}]'.format(n_bin))
         self._myprint('[set loop_max : {}]'.format(loop_max))
         t_max = data_domain.max()
         for loop_t in range(loop_max):
@@ -986,10 +997,12 @@ class PlotManager:
         else:
             loop_max = N_plot
         if(n_bin == 0):
-            n_bin = len(data_range[:,0])
-            self._myprint('[set n_bin : {}]'.format(n_bin))
-        else:
-            self._myprint('[n_bin input :{}]'.format(n_bin))
+            self._myprint('[not input n_bin, automatically set]')
+            if(n_bin > 10000):
+                n_bin = 100
+                self._myprint('[detect n_bin is over 10000, set n_bin 100]')
+            else:
+                n_bin = len(data_range)
         self._myprint('[set loop_max : {}]'.format(loop_max))
         t_max = data_domain.max()
         for loop_t in range(loop_max):
