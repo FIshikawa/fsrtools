@@ -427,8 +427,9 @@ def log_check(top_directory):
             target_dir_list = [x for x in whole_lines if 'set result output directory' in x] 
             if(len(target_dir_list) == 1):
                 target_directory = target_dir_list[0].split(' ')[-1].split(']')[0]
-                current_directory = os.getcwd()
-                target_directory = os.path.join(current_directory,target_directory)
+                top_directory_path = os.path.abspath(top_directory)
+                upstairs_top_directory_path = os.path.dirname(top_directory_path)
+                target_directory = os.path.join(upstairs_top_directory_path,target_directory)
                 if(os.path.isdir(target_directory)):
                     print('[result directory : {}]'.format(target_directory))
                     workstation = [x for x in whole_lines if 'server name' in x]
