@@ -137,13 +137,11 @@ class PlotManager:
         result_data_map_total = {}
         for i, result_data in enumerate(self._result_data_map):
             result_data_map_total[i] = result_data
-            result_data_map_total[i]['parameters'] = self._config_data_map[result_data['common_parameter_number']]['common_parameters']
+            result_data_map_total[i]['common_parameters'] = self._config_data_map[result_data['common_parameter_number']]['common_parameters']
+            result_data_map_total[i]['parameters'] = result_data_map_total[i]['common_parameters']
             for key, value in result_data['variable_parameters'].items():
                 result_data_map_total[i]['parameters'][key] = value
         return result_data_map_total
-
-    def common_parameter_list(self):
-        return copy.deepcopy(self._config_data_map)
 
     def reload(self,top_directory=None):
         print('[reload result data]') 
