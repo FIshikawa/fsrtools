@@ -69,7 +69,7 @@ class PlotManager:
                         log_write('')
                         log_write.add_indent()
                         for result_data in self._result_data_map:
-                            if(result_data['common_parameters'] == i):
+                            if(result_data['common_parameter_number'] == i):
                                 counter += 1
                                 log_write('[{}] '.format(counter),end='')
                                 for key, value in result_data['variable_parameters'].items():
@@ -122,7 +122,7 @@ class PlotManager:
         print('                addplot= [plot_type, value_name], marker=str_matplotlib_form)')
         print('  [whole result data can be accessed by result_data_map method function]')
         print('     dictionary_type_data = fsrplot.result_data_map()')
-        print('     result_data_map is a list of dictionary : the order corresponds to the number veiwed by result_info')
+        print('     result_data_map is a dictionary : the order corresponds to the number veiwed by result_info')
         print('  [Useful axes methods]')
         print('     ax.set_xlim(right=min,left=max)')
         print('     ax.set_ylim(bottom=min,top=max)')
@@ -134,7 +134,16 @@ class PlotManager:
         print('     new line : Ctrl + O') 
 
     def result_data_map(self):
-        return self._result_data_map
+        result_data_map_total = {}
+        for i, result_data in enumerate(self._result_data_map):
+            result_data_map_total[i] = result_data
+            result_data_map_total[i]['parameters'] = self._config_data_map[result_data['common_parameter_number']]['common_parameters']
+            for key, value in result_data['variable_parameters'].items():
+                result_data_map_total[i]['parameters'][key] = value
+        return result_data_map_total
+
+    def common_parameter_list(self):
+        return copy.deepcopy(self._config_data_map)
 
     def reload(self,top_directory=None):
         print('[reload result data]') 
@@ -170,7 +179,9 @@ class PlotManager:
             plt.pause(.01)
         else:
             plt.show()
-            self.ax = {}
+            for key in self._plot_type_list:
+                self.ax[key] = {}
+                self._plot_type[key] = []
 
     def close(self,fig_target=None):
         if(fig_target != None):
@@ -1150,7 +1161,7 @@ def set_data_map(top_directory):
                 result_data_map[-1]['time_info'] = json_data['time_info']
                 if(config_data_map):
                     result_data_map[-1]['date'] = config_data_map[-1]['date']
-                    result_data_map[-1]['common_parameters'] = len(config_data_map) - 1
+                    result_data_map[-1]['common_parameter_number'] = len(config_data_map) - 1
                     if(config_data_map[-1]['variable_parameters']):
                         result_data_map[-1]['variable_parameters'] = {} 
                         for key in config_data_map[-1]['variable_parameters']:
