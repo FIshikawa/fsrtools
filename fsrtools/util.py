@@ -27,8 +27,8 @@ class LogManager:
 
     """
 
-    def __init__(self,n_indent=0,log_file=None,cout_tag=False):
-        if(cout_tag is False and log_file is None):
+    def __init__(self,n_indent=0,log_file=None,cout_tag=False,silent=False):
+        if(cout_tag is False and log_file is None and silent is False):
             raise ValueError('log_file is defined nesessarily when cout_tag is False.')
         if(log_file is not None):
             if(os.path.exists(log_file)):
@@ -37,6 +37,7 @@ class LogManager:
         self.indent = n_indent
         self.temp_indent = n_indent
         self.cout_tag = cout_tag
+        self.silent = silent
 
     def __indent(self):
         indent_str = ''
@@ -83,22 +84,23 @@ class LogManager:
             self.indent = self.temp_indent
 
     def progress_bar(self,loop,loop_max,add_sentence=None,indent=0):
-        sys.stdout.write('\r')
-        sentence = ''
-        if(indent > 0):
-            for i in range(indent):
-                sentence += '  ' 
-        else:
-            for i in range(self.indent):
-                sentence += '  ' 
-        progress_ratio = int(float(loop+1)/float(loop_max)*100)
-        sentence += '[Progress : {0:0=3}%]'.format(progress_ratio)
-        if(add_sentence != None):
-            sentence += add_sentence
-        sys.stdout.write(sentence)
-        sys.stdout.flush()
-        if(progress_ratio >= 100):
-            sys.stdout.write('\n')
+        if(not self.silent):
+            sys.stdout.write('\r')
+            sentence = ''
+            if(indent > 0):
+                for i in range(indent):
+                    sentence += '  ' 
+            else:
+                for i in range(self.indent):
+                    sentence += '  ' 
+            progress_ratio = int(float(loop+1)/float(loop_max)*100)
+            sentence += '[Progress : {0:0=3}%]'.format(progress_ratio)
+            if(add_sentence != None):
+                sentence += add_sentence
+            sys.stdout.write(sentence)
+            sys.stdout.flush()
+            if(progress_ratio >= 100):
+                sys.stdout.write('\n')
 
 
 class StopWatch:

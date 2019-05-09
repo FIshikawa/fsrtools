@@ -236,8 +236,11 @@ class PlotManager:
                 print('[{}-th result is failed simulation : no time result]'.format(i))
         return parameter_data, time_data
 
-    def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,log_scale=False):
-        self._myprint.reset_indent()
+    def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,log_scale=False,silent=False):
+        if(silent):
+            self._myprint = LogManager(silent=silent)
+        else:
+            self._myprint.reset_indent()
         directory_name = '' 
         file_path = ''
         result_files = []
@@ -291,6 +294,7 @@ class PlotManager:
             raise KeyError('no selected direcotry or result file')
         self._myprint.decrease_indent()
         self._myprint('[plot completed]')
+        self._myprint = LogManager(cout_tag=True)
 
     def plot_data(self,data=None,data_x=None,data_y=None,data_z=None,y_error=None,ptype=None,x_axis=None,y_axis=None,z_axis=None,label=None,title=None,addplot=None,x_lim=None,y_lim=None,marker=None):
         if(addplot is not None and isinstance(addplot,list)):
