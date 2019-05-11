@@ -405,12 +405,10 @@ def log_check(top_directory):
         print('[top directory is root of experiments : plot all log in experiments]')
         plot_log(top_directory)
     elif(len(date_dir_list) > 0):
-        print('[top directory is root of data : plot latest one]')
-        date_dict = {}
-        for directory in date_dir_list:
-            date_dict[directory] =  datetime.datetime.strptime(directory,'%Y-%m-%d-%H-%M-%S') 
-        latest_directory = max(date_dict)
-        plot_log(os.path.join(top_directory,latest_directory))
+        print('[top directory is root of data]')
+        for target_directory in date_dir_list:
+            color_print('[{0}]'.format(target_directory),'GREEN')
+            plot_log(os.path.join(top_directory,target_directory))
     else:
       print('[Not root of results : all "log*.dat"]')
       for key in files_list:
