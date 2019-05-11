@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ptick
 from mpl_toolkits.mplot3d import axes3d
 from fsrtools.util import LogManager
+from fsrtools.util import colors
 from fsrtools.simulate_tools import set_total_combinations
 
 class PlotManager:
@@ -60,7 +61,7 @@ class PlotManager:
             counter = 0
             if(self._config_data_map):
                 for i, element in enumerate(self._config_data_map):
-                    log_write('[experiment date: {}]'.format(element['date']))
+                    log_write(colors('GREEN') + '[experiment date: {}]'.format(element['date']) + colors('END'))
                     log_write.add_indent()
                     if(element['variable_parameters']):
                         log_write('[common parameters] : ',end='')
