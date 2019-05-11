@@ -16,6 +16,7 @@ def main():
     parser.add_argument('-ip','--interactive_plot',action='store_true',help='Plot Interactive mode : via IPython')
     parser.add_argument('-pt','--plot_type',choices=['normal','totally','hist','3d'],help='plot option : with instant plot mode')
     parser.add_argument('--log_scale',action='store_true',help='log scale plot : instant mode only')
+    parser.add_argument('-rl','--result_list',action='store',type=str,help='result list plot mode')
 
     args = vars(parser.parse_args())
 
@@ -53,6 +54,10 @@ def main():
             fsrplot = PlotManager(top_directory=directory_name)
             fsrplot.plot_result(directory=directory_name)
             fsrplot.show()
+        elif(args['result_list']):
+            directory_name = args['result_list']
+            fsrplot = PlotManager(top_directory=directory_name)
+            fsrplot.result_info()
         else:
             raise KeyError('No input directory and file,  must select')
 
