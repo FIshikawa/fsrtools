@@ -138,8 +138,8 @@ class PlotManager:
         result_data_map_total = {}
         for i, result_data in enumerate(self._result_data_map):
             result_data_map_total[i+1] = result_data
-            result_data_map_total[i+1]['common_parameters'] = self._config_data_map[result_data['common_parameter_number']]['common_parameters']
-            result_data_map_total[i+1]['parameters'] = result_data_map_total[i+1]['common_parameters']
+            result_data_map_total[i+1]['common_parameters'] = copy.deepcopy(self._config_data_map[result_data['common_parameter_number']]['common_parameters'])
+            result_data_map_total[i+1]['parameters'] = copy.deepcopy(result_data_map_total[i+1]['common_parameters'])
             for key, value in result_data['variable_parameters'].items():
                 result_data_map_total[i+1]['parameters'][key] = value
         return result_data_map_total
