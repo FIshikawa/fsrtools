@@ -139,9 +139,6 @@ class PlotManager:
         for i, result_data in enumerate(self._result_data_map):
             result_data_map_total[i+1] = result_data
             result_data_map_total[i+1]['common_parameters'] = copy.deepcopy(self._config_data_map[result_data['common_parameter_number']]['common_parameters'])
-            result_data_map_total[i+1]['parameters'] = copy.deepcopy(result_data_map_total[i+1]['common_parameters'])
-            for key, value in result_data['variable_parameters'].items():
-                result_data_map_total[i+1]['parameters'][key] = value
         return result_data_map_total
 
     def result_data_map_all(self):
@@ -193,6 +190,7 @@ class PlotManager:
             for key in self._plot_type_list:
                 self.ax[key] = {}
                 self._plot_type[key] = []
+                self._label = ''
 
     def close(self,fig_target=None):
         if(fig_target != None):
@@ -237,7 +235,7 @@ class PlotManager:
                 print('[{}-th result is failed simulation : no time result]'.format(i))
         return parameter_data, time_data
 
-    def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,log_scale=False,silent=False):
+    def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,log_scale=False,label=None,silent=False):
         if(silent):
             self._myprint = LogManager(silent=silent)
         else:
@@ -249,15 +247,16 @@ class PlotManager:
             if(isinstance(directory, list)):
                 self._myprint('[dictionary list input : overlaide plot mode]')
                 if(plot_value):
-                    for dictionary_each in dictionary:
-                        file_path = self._file_path_set(file,directory)
+                    for directory_each in directory:
+                        file_path = self._file_path_set(file,directory_each)
                         if(not os.path.exists(file_path)):
                             raise NameError('{} does not exist'.format(file_path)) 
                         directory_name = self._directory_name_set(file_path=file_path)
                         json_data = self._check_json_file(directory_name)
                         if(json_data is None and plot_type is None):
                             raise KeyError('must select plot_type')
-                        self._plot_file(file_path,directory,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale)  
+                        else:
+                            self._plot_file(file_path,directory_each,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale,label=label)  
                 else:
                     raise KeyError('no plot_value expeceted : plot value should be input')
             else:
@@ -541,7 +540,7 @@ class PlotManager:
         self._myprint = myprint_temp
         return data, type_dict, plot_type
 
-    def _set_fig_ax(self,type_dict,plot_type,plot_value,directory):
+    def _set_fig_ax(self,type_dict,plot_type,plot_value=None,directory=None,label=None):
         self._myprint('[set fig and ax]')
         self._myprint.add_indent()
         total_number_of_plot = 0
@@ -610,14 +609,13 @@ class PlotManager:
             for key in check_list:
                 if(plot_value in type_dict[key]): 
                     self._myprint('[detect : plot_value in : {}]'.format(key))
-                    key_t = key
                     del type_dict[key][:]
                     type_dict[key].append(plot_value)
                     if(plot_value in self.ax[plot_type].keys()):
-                      self._myprint('[{} is already set in {} plots : added into target plot]'.format(plot_value,plot_type))
+                        self._myprint('[{} is already set in {} plots : added into target plot]'.format(plot_value,plot_type))
                     else:
-                      self._myprint('[plot_value is not in axes keys : create]')
-                      self.fig[plot_type], self.ax[plot_type][plot_value] = plt.subplots(figsize=\
+                        self._myprint('[plot_value is not in axes keys : create]')
+                        self.fig[plot_type], self.ax[plot_type][plot_value] = plt.subplots(figsize=\
                                                                                         (self.basic_size['window_small']*1.618,\
                                                                                             self.basic_size['window_small']))
                 else:
@@ -637,13 +635,25 @@ class PlotManager:
 
             if(len([x for x in check_list if len(type_dict[x]) > 0]) < 1):
                 raise KeyError('{} is not in {} plots'.format(plot_value,plot_type))
+
+            self._label = ''
+            if(label is not None):
+                if(label):
+                    self._myprint('[label detect : {}]'.format(label))
+                    if(isinstance(label,list)):
+                        for label_each in label:
+                            self._label += '{0} : {1}, '.format(label_each, self._result_data_map[directory]['parameters'][label_each])
+                    else:
+                        self._label = '{0} : {1}, '.format(label, self._result_data_map[directory]['parameters'][label])
+                else:
+                    self._label = ''
             else:
-                if(isinstance(directory, int)): 
-                    for key, value in self._result_data_map[directory]['variable_parameters'].items():
-                        self._label = '{0} : {1}, '.format(key, value)
+                for key, value in self._result_data_map[directory]['variable_parameters'].items():
+                    self._label += '{0} : {1}, '.format(key, value)
+
         self._myprint.decrease_indent()
 
-    def _plot_file(self,file_path,directory,params_dict=None,legend_str=None,plot_type=None,plot_value=None,log_scale=False):
+    def _plot_file(self,file_path,directory,params_dict=None,plot_type=None,plot_value=None,log_scale=False,label=None):
         plt.rcParams["font.size"] = self.basic_size['font']
         if(params_dict != None):
             if('T' in params_dict.keys()):
@@ -661,7 +671,7 @@ class PlotManager:
             self._myprint('[hist plot]')
             del self._plot_type[plot_type][:]
             self._myprint.add_indent()
-            self._set_fig_ax(type_dict,plot_type,plot_value,directory)
+            self._set_fig_ax(type_dict,plot_type,plot_value=plot_value,directory=directory,label=label)
 
             for key in type_dict['2d_plot']:
                 for value_name in type_dict['values']:
@@ -736,7 +746,7 @@ class PlotManager:
             self._myprint('[3d plot]')
             del self._plot_type[plot_type][:]
             self._myprint.add_indent()
-            self._set_fig_ax(type_dict,plot_type,plot_value,directory)
+            self._set_fig_ax(type_dict,plot_type,plot_value=plot_value,directory=directory,label=label)
 
             for key in type_dict['2d_plot']:
                 for value_name in type_dict['values']:
@@ -776,7 +786,7 @@ class PlotManager:
         elif(plot_type == 'totally'):
             self._myprint('[plot_type detect : totally]')
             del self._plot_type['totally'][:]
-            self._set_fig_ax(type_dict,plot_type,plot_value,directory)
+            self._set_fig_ax(type_dict,plot_type,plot_value=plot_value,directory=directory,label=label)
             value_name = 'Totally_plot'
             self._plot_type[plot_type].append(value_name)
             for counter, key in enumerate(type_dict['y_list']):
@@ -818,7 +828,7 @@ class PlotManager:
             self._myprint('[normal plot]')
             del self._plot_type[plot_type][:]
             self._myprint.add_indent()
-            self._set_fig_ax(type_dict,plot_type,plot_value,directory)
+            self._set_fig_ax(type_dict,plot_type,plot_value=plot_value,directory=directory,label=label)
 
             for key in type_dict['ACF_list']:
                 value_axis = key
@@ -841,10 +851,6 @@ class PlotManager:
                 value_axis = key
                 value_axis_error = 'error_' + key
                 value_name = key
-                if(len(self._label) > 0):
-                    label = self._label
-                else:
-                    label = None
                 self._myprint('[plot : {}]'.format(value_name))
                 self._myprint.add_indent()
                 self._plot_type[plot_type].append(value_name)
@@ -853,9 +859,9 @@ class PlotManager:
                               data[type_dict['x_axis']],
                               data[value_axis],
                               y_error=data[value_axis_error],
-                              label=label
+                              label=self._label
                               )
-                if(label != None):
+                if(self._label):
                     self.ax[plot_type][value_name].legend(loc="upper right",fontsize=self.basic_size['font'])
                 self.ax[plot_type][value_name].set_xlabel(type_dict['x_axis'])
                 self.ax[plot_type][value_name].set_ylabel(value_name)
@@ -864,10 +870,6 @@ class PlotManager:
             for key in type_dict['Rest_list']:
                 value_axis = key
                 value_name = key
-                if(len(self._label) > 0):
-                    label = self._label
-                else:
-                    label = None
                 self._myprint('[plot : {}]'.format(value_name))
                 self._myprint.add_indent()
                 self._plot_type[plot_type].append(value_name)
@@ -875,9 +877,9 @@ class PlotManager:
                               self.ax[plot_type][value_name],
                               data[type_dict['x_axis']],
                               data[value_axis],
-                              label=label
+                              label=self._label
                               )
-                if(label != None):
+                if(self._label):
                     self.ax[plot_type][value_name].legend(loc="upper right",fontsize=self.basic_size['font'])
                 self.ax[plot_type][value_name].set_xlabel(type_dict['x_axis'])
                 self.ax[plot_type][value_name].set_ylabel(value_name)
@@ -1177,6 +1179,7 @@ def set_data_map(top_directory):
             result_data_map[-1]['files'] = files
             result_data_map[-1]['directory'] = current_directory
             if(json_data):
+                result_data_map[-1]['parameters'] = json_data['simulate_params']
                 result_data_map[-1]['time_info'] = json_data['time_info']
                 if(config_data_map):
                     result_data_map[-1]['date'] = config_data_map[-1]['date']
@@ -1185,6 +1188,7 @@ def set_data_map(top_directory):
                         result_data_map[-1]['variable_parameters'] = {} 
                         for key in config_data_map[-1]['variable_parameters']:
                             result_data_map[-1]['variable_parameters'][key] = json_data['simulate_params'][key]
+
 
     return copy.deepcopy(config_data_map), copy.deepcopy(result_data_map) 
 
