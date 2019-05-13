@@ -61,7 +61,7 @@ class PlotManager:
             counter = 0
             if(self._config_data_map):
                 for i, element in enumerate(self._config_data_map):
-                    log_write(colors('GREEN') + '[experiment date: {}]'.format(element['date']) + colors('END'))
+                    log_write(colors('GREEN') + '[experiment date : {}]'.format(element['common_directory']) + colors('END'))
                     log_write.add_indent()
                     if(element['variable_parameters']):
                         log_write('[common parameters] : ',end='')
@@ -115,7 +115,7 @@ class PlotManager:
 
     def help(self):
         print('  [plot_result variables]')
-        print('    plot_result(file= string, directory= int, plot_type= string, plot_value= string,log= bool)')
+        print('    plot_result(file= string, directory= int, plot_type= string, plot_value= string, log_scale= bool, silent= bool)')
         print('  [plot_data variables]')
         print('    [Remark : you can overlay some graph on same window until you input fsrplot.show()')
         print('    plot_data(data= data_obtained_by_data_load, data_x= str_or_array_like, data_y= str_or_array_like, data_z= str_or_array_like,') 
@@ -198,10 +198,9 @@ class PlotManager:
         else:
             plt.close()
 
-    def data_load(self,file=None, directory=None, plot_type=None):
+    def data_load(self,file=None, directory=None, plot_type=None,silent=False):
         file_path = ''
         if(file is not None):
-            self._myprint('[file name : {}]'.format(file))
             file_path = ''
             if(directory is not None):
                 file_path = self._file_path_set(file,directory)
@@ -210,17 +209,17 @@ class PlotManager:
         else:
             raise KeyError('no input file name')
         if(not file_path in self._buffer_data.keys()):
-            data, type_dict, plot_type = self._data_load(file_path,plot_type)
+            data, type_dict, plot_type = self._data_load(file_path,plot_type,silent=silent)
         else:
-            self._myprint('[data is already bufferd]')
             data      = copy.deepcopy(self._buffer_data[file_path]['data'])
             type_dict = copy.deepcopy(self._buffer_data[file_path]['type_dict'])
             plot_type = copy.deepcopy(self._buffer_data[file_path]['plot_type'])
-        self._myprint('[data type list]')
-        self._myprint.add_indent()
-        for key in type_dict.keys():
-            self._myprint('[{0}] : {1}'.format(key,type_dict[key]))
-        self._myprint.decrease_indent()
+        if(not silent):
+            self._myprint('[data type list]')
+            self._myprint.add_indent()
+            for key in type_dict.keys():
+                self._myprint('[{0}] : {1}'.format(key,type_dict[key]))
+            self._myprint.decrease_indent()
         return data, type_dict, plot_type
 
     def time_result(self):
@@ -235,7 +234,7 @@ class PlotManager:
                 print('[{}-th result is failed simulation : no time result]'.format(i))
         return parameter_data, time_data
 
-    def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,log_scale=False,label=None,silent=False):
+    def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,log_scale=False,label=None,label_position=None,silent=False):
         if(silent):
             self._myprint = LogManager(silent=silent)
         else:
@@ -257,6 +256,10 @@ class PlotManager:
                             raise KeyError('must select plot_type')
                         else:
                             self._plot_file(file_path,directory_each,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale,label=label)  
+                            if(label_position is not None):
+                                for plot_type_temp in self.ax.keys():
+                                    for plot_value_temp in self.ax[plot_type_temp].keys():
+                                        self.ax[plot_type_temp][plot_value_temp].legend(loc=label_position,prop = {'size':self.basic_size['font']})
                 else:
                     raise KeyError('no plot_value expeceted : plot value should be input')
             else:
@@ -273,7 +276,11 @@ class PlotManager:
                 self._myprint.add_indent()
                 if(json_data is None and plot_type is None):
                     raise KeyError('must select plot_type')
-                self._plot_file(file_path,directory,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale)  
+                self._plot_file(file_path,directory,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale,label=label)  
+                if(label_position is not None):
+                    for plot_type_temp in self.ax.keys():
+                        for plot_value_temp in self.ax[plot_type_temp].keys():
+                            self.ax[plot_type_temp][plot_value_temp].legend(loc=label_position,prop = {'size':self.basic_size['font']})
                 if(save_fig):
                     fig_name = os.path.basename(file_path)
                     fig_name = os.path.join(directory_name,fig_name.split('.')[0] + '.pdf')
@@ -642,13 +649,13 @@ class PlotManager:
                     self._myprint('[label detect : {}]'.format(label))
                     if(isinstance(label,list)):
                         for label_each in label:
-                            self._label += '{0} : {1}, '.format(label_each, self._result_data_map[directory]['parameters'][label_each])
+                            self._label += '{0} : {1}, '.format(label_each, self._result_data_map[directory-1]['parameters'][label_each])
                     else:
-                        self._label = '{0} : {1}, '.format(label, self._result_data_map[directory]['parameters'][label])
+                        self._label = '{0} : {1}, '.format(label, self._result_data_map[directory-1]['parameters'][label])
                 else:
                     self._label = ''
             else:
-                for key, value in self._result_data_map[directory]['variable_parameters'].items():
+                for key, value in self._result_data_map[directory-1]['variable_parameters'].items():
                     self._label += '{0} : {1}, '.format(key, value)
 
         self._myprint.decrease_indent()
@@ -1155,7 +1162,7 @@ def set_data_map(top_directory):
             if(os.path.exists(json_path)):
                 json_data = json.load(open(json_path,'r'))
                 config_data_map.append({})
-                config_data_map[-1]['date'] = os.path.dirname(current_directory)
+                config_data_map[-1]['common_directory'] = os.path.dirname(current_directory)
                 config_data_map[-1]['variable_parameters'] = []
                 config_data_map[-1]['common_parameters'] = {'command_name':json_data['experiment_params']['command_name']}
                 print_temp = lambda sentence : sentence
@@ -1182,7 +1189,7 @@ def set_data_map(top_directory):
                 result_data_map[-1]['parameters'] = json_data['simulate_params']
                 result_data_map[-1]['time_info'] = json_data['time_info']
                 if(config_data_map):
-                    result_data_map[-1]['date'] = config_data_map[-1]['date']
+                    result_data_map[-1]['common_directory'] = config_data_map[-1]['common_directory']
                     result_data_map[-1]['common_parameter_number'] = len(config_data_map) - 1
                     if(config_data_map[-1]['variable_parameters']):
                         result_data_map[-1]['variable_parameters'] = {} 
