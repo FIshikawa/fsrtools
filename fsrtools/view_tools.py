@@ -144,6 +144,18 @@ class PlotManager:
                 result_data_map_total[i+1]['parameters'][key] = value
         return result_data_map_total
 
+    def result_data_map_all(self):
+        result_data_map_total = self.result_data_map()
+        for key, result_data in result_data_map_total.items():
+            result_file_detail = {}
+            for file_name in result_data['files']:
+                if('result' in file_name):
+                    file_path = os.path.join(result_data['directory'],file_name)
+                    data, type_dict, plot_type = self._data_load(file_path)
+                    result_file_detail[file_name] = {'value_list':type_dict,'plot_type':plot_type}
+            result_data_map_total[key]['result_file_detail'] = result_file_detail
+        return result_data_map_total
+
     def reload(self,top_directory=None):
         print('[reload result data]') 
         self._label = ''
@@ -187,18 +199,6 @@ class PlotManager:
             plt.close(fig_target)
         else:
             plt.close()
-
-    def dissect_result(self,file=None, directory=None):
-        directory_name = self._directory_name_set(directory=directory)
-        file_path = self._file_path_set(file,directory)
-        print('[directory name] : {}'.format(directory_name))
-        self._check_json_file(directory_name)
-        data, type_dict, plot_type = self.data_load(file=file_path)
-        self._myprint('[check data shape]')
-        self._myprint.add_indent()
-        for key in data.keys():
-            self._myprint('[{0}] : {1}'.format(key,data[key].shape))
-        self._myprint.decrease_indent()
 
     def data_load(self,file=None, directory=None, plot_type=None):
         file_path = ''
@@ -246,25 +246,40 @@ class PlotManager:
         file_path = ''
         result_files = []
         if(file is not None):
-            self._myprint('[file plot mode]')
-            self._myprint('[file name : {}]'.format(file))
-            if(directory is not None):
-                file_path = self._file_path_set(file,directory)
+            if(isinstance(directory, list)):
+                self._myprint('[dictionary list input : overlaide plot mode]')
+                if(plot_value):
+                    for dictionary_each in dictionary:
+                        file_path = self._file_path_set(file,directory)
+                        if(not os.path.exists(file_path)):
+                            raise NameError('{} does not exist'.format(file_path)) 
+                        directory_name = self._directory_name_set(file_path=file_path)
+                        json_data = self._check_json_file(directory_name)
+                        if(json_data is None and plot_type is None):
+                            raise KeyError('must select plot_type')
+                        self._plot_file(file_path,directory,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale)  
+                else:
+                    raise KeyError('no plot_value expeceted : plot value should be input')
             else:
-                file_path = file
-            if(not os.path.exists(file_path)):
-                raise NameError('{} does not exist'.format(file_path)) 
-            directory_name = self._directory_name_set(file_path=file_path)
-            json_data = self._check_json_file(directory_name)
-            self._myprint.add_indent()
-            if(json_data is None and plot_type is None):
-                raise KeyError('must select plot_type')
-            self._plot_file(file_path,directory,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale)  
-            if(save_fig):
-                fig_name = os.path.basename(file_path)
-                fig_name = os.path.join(directory_name,fig_name.split('.')[0] + '.pdf')
-                self._myprint('[save figure : {}]'.format(fig_name))
-                plt.savefig(fig_name,format='pdf')
+                self._myprint('[file plot mode]')
+                self._myprint('[file name : {}]'.format(file))
+                if(directory is not None):
+                    file_path = self._file_path_set(file,directory)
+                else:
+                    file_path = file
+                if(not os.path.exists(file_path)):
+                    raise NameError('{} does not exist'.format(file_path)) 
+                directory_name = self._directory_name_set(file_path=file_path)
+                json_data = self._check_json_file(directory_name)
+                self._myprint.add_indent()
+                if(json_data is None and plot_type is None):
+                    raise KeyError('must select plot_type')
+                self._plot_file(file_path,directory,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale)  
+                if(save_fig):
+                    fig_name = os.path.basename(file_path)
+                    fig_name = os.path.join(directory_name,fig_name.split('.')[0] + '.pdf')
+                    self._myprint('[save figure : {}]'.format(fig_name))
+                    plt.savefig(fig_name,format='pdf')
         elif(file is None and directory is not None):
             directory_name = self._directory_name_set(directory=directory)
             self._myprint('[directory plot mode : plot all "result" files" in {}]'.format(directory_name))
@@ -286,7 +301,7 @@ class PlotManager:
             self._myprint.add_indent()
             self._myprint('[start ploting]')
             for key in result_files:
-                self._plot_file(os.path.join(directory_name,key),directory,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale)
+                self._plot_file(os.path.join(directory_name,key),directory,json_data,plot_type=plot_type,log_scale=log_scale)
                 if(save_fig):
                     fig_name = os.path.join(directory_name, key.split('.')[0] + '.pdf')
                     self._myprint('[save figure : {}]'.format(fig_name))
@@ -340,12 +355,10 @@ class PlotManager:
             if(axis_list[1] is None):
                 self.ax[plot_type][value_name].set_ylabel(data_list[1])
             self._plot_2d(self.ax[plot_type][value_name],data_dict[0],data_dict[1],y_error=data_dict[3],label=label,marker=marker)
-        if(x_lim is not None):
-            if(isinstance(x_lim,dict)):
-                self.ax[plot_type][value_name].set_xlim(left=x_lim[0],right=x_lim[1])
-        if(y_lim is not None):
-            if(isinstance(y_lim,dict)):
-                self.ax[plot_type][value_name].set_ylim(bottom=y_lim[0],top=y_lim[1])
+        if(isinstance(x_lim,dict)):
+            self.ax[plot_type][value_name].set_xlim(left=x_lim[0],right=x_lim[1])
+        if(isinstance(y_lim,dict)):
+            self.ax[plot_type][value_name].set_ylim(bottom=y_lim[0],top=y_lim[1])
         if(label is not None):
             self.ax[plot_type][value_name].legend(loc="upper right",fontsize=self.basic_size['font'])
         if(title is not None):
@@ -405,9 +418,12 @@ class PlotManager:
                 self._myprint('  [{0} : {1} ]'.format(key,json_data[key]))
             return json_data
 
-    def _data_load(self,file_path,plot_type):
+    def _data_load(self,file_path,plot_type=None,silent=False):
         type_dict = {}
         data = {}
+        myprint_temp = copy.deepcopy(self._myprint)
+        if(silent):
+            self._myprint = LogManager(silent=silent)
         if(plot_type):
             if(not plot_type in self._plot_type_list):
                 raise KeyError('input plot_type is not in our set')
@@ -522,7 +538,7 @@ class PlotManager:
             for key in value_keys[1:]:
                 data[key] = data_raw[:,value_keys.index(key)]
                 type_dict['y_list'].append(key)
-
+        self._myprint = myprint_temp
         return data, type_dict, plot_type
 
     def _set_fig_ax(self,type_dict,plot_type,plot_value,directory):
