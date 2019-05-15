@@ -234,7 +234,7 @@ class PlotManager:
                 print('[{}-th result is failed simulation : no time result]'.format(i))
         return parameter_data, time_data
 
-    def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,log_scale=False,label=None,label_position=None,silent=False):
+    def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,N_plot=None,log_scale=False,label=None,label_position=None,silent=False):
         if(silent):
             self._myprint = LogManager(silent=silent)
         else:
@@ -255,7 +255,7 @@ class PlotManager:
                         if(json_data is None and plot_type is None):
                             raise KeyError('must select plot_type')
                         else:
-                            self._plot_file(file_path,directory_each,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale,label=label)  
+                            self._plot_file(file_path,directory_each,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale,label=label,N_plot=N_plot)  
                             if(label_position is not None):
                                 for plot_type_temp in self.ax.keys():
                                     for plot_value_temp in self.ax[plot_type_temp].keys():
@@ -276,7 +276,7 @@ class PlotManager:
                 self._myprint.add_indent()
                 if(json_data is None and plot_type is None):
                     raise KeyError('must select plot_type')
-                self._plot_file(file_path,directory,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale,label=label)  
+                self._plot_file(file_path,directory,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale,label=label,N_plot=N_plot)  
                 if(label_position is not None):
                     for plot_type_temp in self.ax.keys():
                         for plot_value_temp in self.ax[plot_type_temp].keys():
@@ -307,7 +307,7 @@ class PlotManager:
             self._myprint.add_indent()
             self._myprint('[start ploting]')
             for key in result_files:
-                self._plot_file(os.path.join(directory_name,key),directory,json_data,plot_type=plot_type,log_scale=log_scale)
+                self._plot_file(os.path.join(directory_name,key),directory,json_data,plot_type=plot_type,log_scale=log_scale,N_plot=N_plot)
                 if(save_fig):
                     fig_name = os.path.join(directory_name, key.split('.')[0] + '.pdf')
                     self._myprint('[save figure : {}]'.format(fig_name))
@@ -660,8 +660,10 @@ class PlotManager:
 
         self._myprint.decrease_indent()
 
-    def _plot_file(self,file_path,directory,params_dict=None,plot_type=None,plot_value=None,log_scale=False,label=None):
+    def _plot_file(self,file_path,directory,params_dict=None,plot_type=None,plot_value=None,log_scale=False,label=None,N_plot=None):
         plt.rcParams["font.size"] = self.basic_size['font']
+        if(N_plot is None):
+            N_plot = 10
         if(params_dict != None):
             if('T' in params_dict.keys()):
                 T = params_dict['T']
@@ -721,7 +723,7 @@ class PlotManager:
                                                      data[value_name]['hist'],
                                                      data[type_dict['y_axis']],
                                                      self.ax[plot_type][key],
-                                                     N_plot=10,
+                                                     N_plot=N_plot,
                                                      label=type_dict['y_axis']
                                                      )
                         self.ax[plot_type][key].set_title(key)
@@ -740,7 +742,7 @@ class PlotManager:
                                            data[value_name]['hist'],
                                            data[type_dict['y_axis']],
                                            self.ax[plot_type][key],
-                                           N_plot=10
+                                           N_plot=N_plot
                                            )
                         self.ax[plot_type][key].set_xlabel(value_name)
                         self.ax[plot_type][key].set_ylabel(type_dict['y_axis'])
@@ -766,7 +768,7 @@ class PlotManager:
                                                data[type_dict['y_axis']],
                                                self.ax[plot_type][key],
                                                label=type_dict['y_axis'],
-                                               N_plot=10
+                                               N_plot=N_plot
                                                )
                         self.ax[plot_type][key].set_xlabel(type_dict['x_axis'])
                         self.ax[plot_type][key].set_title(key)
@@ -782,7 +784,7 @@ class PlotManager:
                                       data[type_dict['x_axis']],
                                       data[value_name],
                                       data[type_dict['y_axis']],
-                                      N_plot=10
+                                      N_plot=N_plot
                                       )
                         self.ax[plot_type][key].set_xlabel(type_dict['x_axis'])
                         self.ax[plot_type][key].set_ylabel(type_dict['y_axis'])
