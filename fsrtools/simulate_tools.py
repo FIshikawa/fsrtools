@@ -258,15 +258,19 @@ def set_total_combinations(simulate_params,log_write):
             counter = 0
             local_variable_dict = {}
             for key_t in simulate_params.keys():
-                if(key_t in simulate_params[key]):
+                if(key_t != key and key_t in simulate_params[key]):
                     if(isinstance(simulate_params[key_t], list) or isinstance(simulate_params[key_t],str)):
                         counter += 1
                     else:
                         local_variable_dict[key_t] = simulate_params[key_t]
                         counter += 1
             if(len(local_variable_dict) == counter):
-                calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
-                simulate_params_temp[key] = integer_filter(calculated_value)
+                try:
+                    calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
+                    simulate_params_temp[key] = integer_filter(calculated_value)
+                except NameError as err:
+                    log_write('[{} as paremter : "{}" is input as "{}"]'.format(err,key,simulate_params[key]))
+                    simulate_params_temp[key] = simulate_params[key]
                 log_write('[{0} : {1}]'.format(key, simulate_params_temp[key]))
             else:
                 for key_t in local_variable_dict.keys():
