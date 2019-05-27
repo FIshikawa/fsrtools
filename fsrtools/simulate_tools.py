@@ -290,8 +290,11 @@ def set_simulate_params(simulate_params,combination):
             for key_t in simulate_params.keys():
                 if(key_t in simulate_params[key]):
                     local_variable_dict[key_t] = simulate_params[key_t]
-            calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
-            simulate_params_temp[key] = integer_filter(calculated_value)
+            try:
+                calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
+                simulate_params_temp[key] = integer_filter(calculated_value)
+            except NameError as err:
+                simulate_params_temp[key] = simulate_params[key]
     return simulate_params_temp
 
 
