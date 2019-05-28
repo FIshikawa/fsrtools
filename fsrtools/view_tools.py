@@ -1192,6 +1192,7 @@ def set_data_map(top_directory):
                 result_data_map[-1]['time_info'] = json_data['time_info']
                 if(config_data_map):
                     result_data_map[-1]['common_directory'] = config_data_map[-1]['common_directory']
+                    result_data_map[-1]['parameters']['command_name'] = config_data_map[-1]['common_parameters']['command_name']
                     result_data_map[-1]['common_parameter_number'] = len(config_data_map) - 1
                     if(config_data_map[-1]['variable_parameters']):
                         result_data_map[-1]['variable_parameters'] = {} 
