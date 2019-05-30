@@ -956,7 +956,10 @@ class PlotManager:
         for i in range(n_bin):
             normalizer += dv * data_hist[i]
         self._myprint('[normalizer : {}]'.format(normalizer))
-        y_value = data_hist / normalizer 
+        if(normalizer):
+            y_value = data_hist / normalizer 
+        else:
+            y_value = data_hist
         if(label == None):
             label = 'unmodify'
         ax.bar(data_range , y_value , width=dv, label=label, alpha=0.4,color='blue')
@@ -1082,7 +1085,8 @@ class PlotManager:
         normalizer = 0
         for i in range(n_bin):
             normalizer += dv * hist[i]
-        hist = hist / normalizer 
+        if(normalizer):
+            hist = hist / normalizer 
         for i in range(n_bin):
             v_domain[i] = v_min + dv *np.float64(i) 
         return copy.deepcopy(hist),copy.deepcopy(v_domain),dv
