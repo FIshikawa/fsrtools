@@ -1,6 +1,7 @@
 import os
 import json
 import copy
+import re
 import shutil
 import subprocess
 import datetime
@@ -258,12 +259,10 @@ def set_total_combinations(simulate_params,log_write):
             counter = 0
             local_variable_dict = {}
             for key_t in simulate_params.keys():
-                if(key_t != key and key_t in simulate_params[key]):
-                    if(isinstance(simulate_params[key_t], list) or isinstance(simulate_params[key_t],str)):
-                        counter += 1
-                    else:
+                if(key_t != key and re.search( r'\b(?u)' + key_t+ r'\b',simulate_params[key])):
+                    counter += 1
+                    if(not isinstance(simulate_params[key_t], list) and not isinstance(simulate_params[key_t],str)):
                         local_variable_dict[key_t] = simulate_params[key_t]
-                        counter += 1
             if(len(local_variable_dict) == counter):
                 try:
                     calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
@@ -288,7 +287,7 @@ def set_simulate_params(simulate_params,combination):
         if(isinstance(simulate_params[key], str)):
             local_variable_dict = {}
             for key_t in simulate_params.keys():
-                if(key_t in simulate_params[key]):
+                if(key_t != key and re.search( r'\b(?u)' + key_t+ r'\b',simulate_params[key])):
                     local_variable_dict[key_t] = simulate_params[key_t]
             try:
                 calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
