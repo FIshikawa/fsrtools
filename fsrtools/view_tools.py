@@ -759,7 +759,7 @@ class PlotManager:
 
             for key in type_dict['2d_plot']:
                 for value_name in type_dict['values']:
-                    if(value_name in key):
+                    if(value_name + '_2d_plot' == key ):
                         self._myprint('[plot : {}]'.format(key))
                         self._plot_type[plot_type].append(key)
                         self._plot_2d_overlaid(
@@ -776,7 +776,7 @@ class PlotManager:
 
             for key in type_dict['3d_plot']:
                 for value_name in type_dict['values']:
-                    if(value_name in key):
+                    if(value_name + '_3d_plot' == key ):
                         self._myprint('[plot : {}]'.format(key))
                         self._plot_type[plot_type].append(key)
                         self._plot_3d(
