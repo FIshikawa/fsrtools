@@ -528,7 +528,7 @@ class PlotManager:
                 for key in type_dict['values']:
                     type_dict['3d_plot'].append(key + '_3d_plot')
                     type_dict['2d_plot'].append(key + '_2d_plot')
-                    data[key] = data_raw[:,[x for x in range(len(value_keys)) if key in value_keys[x]]]
+                    data[key] = data_raw[:,[x for x in range(len(value_keys)) if key == value_keys[x]]]
             else:
                 raise KeyError('input plot_type is not expeceted')
 
