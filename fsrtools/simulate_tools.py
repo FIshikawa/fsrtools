@@ -455,7 +455,8 @@ def plot_log(target_directory):
         experiment_directory = os.path.join(target_directory,'experiment_' + str(i+1))
         time_log_print(experiment_directory,n_indent=1)
         if(os.path.exists(experiment_directory)):
-            ongoing_directories = [x for x in os.listdir(experiment_directory) if os.path.isdir(os.path.join(experiment_directory,x))]
+            ongoing_directories = sorted([x for x in os.listdir(experiment_directory) \
+                    if os.path.isdir(os.path.join(experiment_directory,x))])
             for directory in ongoing_directories:
                 ongoing_directory = os.path.join(experiment_directory,directory)
                 time_log_print(ongoing_directory,n_indent=2)
