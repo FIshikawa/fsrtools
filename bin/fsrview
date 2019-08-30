@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+
+import os
+import argparse
+from IPython.terminal.embed import InteractiveShellEmbed
+from fsrtools.view_tools import PlotManager
+from fsrtools.util import colors
+from fsrtools.util import color_print
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Visualize Results Scripts',add_help=True)
+    parser.add_argument('-d','--directory',action='store',type=str,help='result direcotry')
+    parser.add_argument('-f','--file',action='store',type=str,help='result file')
+    parser.add_argument('-ip','--interactive_plot',action='store_true',help='Plot Interactive mode : via IPython')
+    parser.add_argument('-pt','--plot_type',choices=['normal','totally','hist','3d'],help='plot option : with instant plot mode')
+    parser.add_argument('--log_scale',action='store_true',help='log scale plot : instant mode only')
+    parser.add_argument('-rl','--result_list',action='store',type=str,help='result list plot mode')
+
+    args = vars(parser.parse_args())
+
+    if(args['interactive_plot']):
+        itembed = InteractiveShellEmbed()
+        color_print('[Interactive Shell Mode]','GREEN')
+        if(args['directory']):
+            target = args['directory']
+            if(os.path.isdir(target)):
+                fsrplot = PlotManager(top_directory=target) 
+            else:
+                raise NameError('{} does not exisits'.format(target))
+            print('[Info of fsrplot]')
+            fsrplot.info()
+            color_print('[ATTENTION]','GREEN')
+            print(' [All configuration should be set by "fsrplot"]')
+            print(' [All infomation can be seen by "fsrplot.info()"]')
+            print(' [Help option is available : "fsrplot.help()"]')
+            color_print('[Start IPython]','GREEN')
+            itembed()
+            color_print('[End Interactive Shell]','GREEN')
+        else:
+            raise ValueError('you should input directory')
+    else:
+        if(args['file']):
+            file = args['file']
+            fsrplot = PlotManager(file=file)
+            if(args['plot_type']):
+                fsrplot.plot_result(file=file,plot_type=args['plot_type'],log_scale=args['log_scale'])
+            else:
+                fsrplot.plot_result(file=file,log_scale=args['log_scale'])
+            fsrplot.show()
+        elif(args['directory']):
+            directory_name = args['directory']
+            fsrplot = PlotManager(top_directory=directory_name)
+            fsrplot.plot_result(directory=directory_name)
+            fsrplot.show()
+        elif(args['result_list']):
+            directory_name = args['result_list']
+            fsrplot = PlotManager(top_directory=directory_name)
+            fsrplot.result_info()
+        else:
+            raise KeyError('No input directory and file,  must select')
+
+if __name__ == '__main__':
+    main()
+
