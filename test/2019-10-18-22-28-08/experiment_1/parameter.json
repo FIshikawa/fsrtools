@@ -1,0 +1,16 @@
+{
+    "experiment_params": {
+        "command_name": "hello_world",
+        "experiment_dir": "test/2019-10-18-22-28-08/",
+        "experiment_tag": "experiment_1"
+    },
+    "simulate_params": {
+        "N_loop": "Ns * 2",
+        "Ns": 2
+    },
+    "time_info": {
+        "start_time": "2019/10/18 22:28:08",
+        "end_time": "2019/10/18 22:28:08",
+        "duration": "0:00:00.019916"
+    }
+}

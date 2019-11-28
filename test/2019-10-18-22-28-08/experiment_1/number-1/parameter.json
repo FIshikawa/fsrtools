@@ -1,0 +1,13 @@
+{
+    "command_name": "hello_world",
+    "simulate_params": {
+        "N_loop": 4,
+        "Ns": 2,
+        "result_directory": "test/2019-10-18-22-28-08/experiment_1/number-1/"
+    },
+    "time_info": {
+        "start_time": "2019/10/18 22:28:08",
+        "end_time": "2019/10/18 22:28:08",
+        "duration": "0:00:00.018407"
+    }
+}

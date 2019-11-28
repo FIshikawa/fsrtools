@@ -1,0 +1,42 @@
+{
+    "experiment_dir": "test/",
+    "experiments": {
+        "experiment_1": {
+            "experiment_params": {
+                "command_name": "hello_world"
+            },
+            "simulate_params": {
+                "N_loop": "Ns * 2",
+                "Ns": 2
+            }
+        },
+        "experiment_2": {
+            "experiment_params": {
+                "command_name": "hello_world"
+            },
+            "simulate_params": {
+                "N_loop": "Ns * Nm",
+                "Ns": [
+                    1,
+                    2
+                ],
+                "Nm": 3
+            }
+        },
+        "experiment_3": {
+            "experiment_params": {
+                "command_name": "create_data"
+            },
+            "simulate_params": {
+                "N_x": [
+                    8,
+                    10
+                ],
+                "N_y": "N_x * 2"
+            }
+        }
+    },
+    "time_info": {
+        "start_time": "2019/10/18 22:28:08"
+    }
+}
