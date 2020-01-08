@@ -317,7 +317,7 @@ class CommandManager:
             self.command_data = json.load(commands_json)
             self.command_name_list = list(self.command_data.keys())
         else:
-            self.coomand_data = {}
+            self.command_data = {}
             self.command_name_list= []
 
     def command_list(self):
