@@ -39,6 +39,9 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False,
     log_write('[server name : {}]'.format('%s' % os.uname()[1]))
     log_write('[set log file at : {}]'.format(log_write.log_file))
 
+    if(ignore_abnormal_termination):
+        log_write('[ignoreing abnormal termination mode]')
+
     if(parameter_file is None):
         raise ValueError('parameter file must be set')
     log_write('[parameter file : {}]'.format(parameter_file))  
