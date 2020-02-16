@@ -19,7 +19,9 @@ def _commands_json_file(test=False):
         return os.path.join(fsrtools.__path__[0],'config/commands.json')
 
 
-def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test_mode=False,command_data=None,structured_output=True):
+def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, 
+                        test_mode=False,command_data=None,structured_output=True,
+                        ignore_abnormal_termination=False):
     current_directory = os.getcwd()
 
     if(test_mode):
@@ -97,7 +99,8 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
                 json_data['experiments'][key]['simulate_params'][key_temp] = value_dict_temp[key_temp] 
 
         json_data['experiments'][key]['experiment_params']['experiment_dir'] = experiment_directory
-        operate_simulations(json_data['experiments'][key],experiment_tag,log_write,command_data,structured_output=structured_output)
+        operate_simulations(json_data['experiments'][key],experiment_tag,log_write,command_data,
+                            structured_output=structured_output,ignore_abnormal_termination=ignore_abnormal_termination)
         log_write.decrease_indent()
         log_write('[{0}][end experiment : {1} : lap time : {2}]'.format(key,stop_watch.lap_end(),stop_watch.lap_time()))
         previous_key = key
@@ -110,7 +113,8 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
     shutil.copy(log_file,os.path.join(experiment_directory,'log.dat'))
 
 
-def operate_simulations(param_dict_original,experiment_tag,log_write,command_data,structured_output=True):
+def operate_simulations(param_dict_original,experiment_tag,log_write,command_data,
+                        structured_output=True,ignore_abnormal_termination=False):
     stop_watch = StopWatch()
     setting_manager = SettingManager(log_write) 
 
@@ -161,7 +165,8 @@ def operate_simulations(param_dict_original,experiment_tag,log_write,command_dat
             setting_manager.set_directory(result_directory)
         else:
             result_directory = simulate_directory
-        execute_simulation(command_name,simulate_params,result_directory,log_write,command_data)
+        execute_simulation(command_name,simulate_params,result_directory,log_write,command_data,
+                           ignore_abnormal_termination=ignore_abnormal_termination)
         simulate_number += 1
         log_write.decrease_indent()
 
@@ -171,7 +176,8 @@ def operate_simulations(param_dict_original,experiment_tag,log_write,command_dat
     log_write('[all simulations complete]')
 
 
-def execute_simulation(command_name,simulate_params,result_directory,log_write,command_data): 
+def execute_simulation(command_name,simulate_params,result_directory,log_write,
+                       command_data,ignore_abnormal_termination=False): 
     stop_watch = StopWatch()
     setting_manager = SettingManager(log_write) 
 
@@ -204,7 +210,8 @@ def execute_simulation(command_name,simulate_params,result_directory,log_write,c
         log_write.reset_indent()
         log_write('[Error End !]')
         setting_manager.json_set(param_dict,parameter_file_each_simulation)
-        raise ValueError('[Abnormal termination detected : return_value : {}]'.format(return_value))
+        if(not ignore_abnormal_termination):
+            raise ValueError('[Abnormal termination detected : return_value : {}]'.format(return_value))
     setting_manager.json_set(param_dict,parameter_file_each_simulation)
 
 
@@ -259,7 +266,7 @@ def set_total_combinations(simulate_params,log_write):
             counter = 0
             local_variable_dict = {}
             for key_t in simulate_params.keys():
-                if(key_t != key and re.search( r'\b(?u)' + key_t+ r'\b',simulate_params[key])):
+                if(key_t != key and re.search( r'\b' + key_t+ r'\b',simulate_params[key])):
                     counter += 1
                     if(not isinstance(simulate_params[key_t], list) and not isinstance(simulate_params[key_t],str)):
                         local_variable_dict[key_t] = simulate_params[key_t]
@@ -287,7 +294,7 @@ def set_simulate_params(simulate_params,combination):
         if(isinstance(simulate_params[key], str)):
             local_variable_dict = {}
             for key_t in simulate_params.keys():
-                if(key_t != key and re.search( r'\b(?u)' + key_t+ r'\b',simulate_params[key])):
+                if(key_t != key and re.search( r'\b' + key_t+ r'\b',simulate_params[key])):
                     local_variable_dict[key_t] = simulate_params[key_t]
             try:
                 calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
