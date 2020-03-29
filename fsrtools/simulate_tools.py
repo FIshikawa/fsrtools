@@ -19,7 +19,9 @@ def _commands_json_file(test=False):
         return os.path.join(fsrtools.__path__[0],'config/commands.json')
 
 
-def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test_mode=False,command_data=None,structured_output=True):
+def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, 
+                        test_mode=False,command_data=None,structured_output=True,
+                        ignore_abnormal_termination=False):
     current_directory = os.getcwd()
 
     if(test_mode):
@@ -36,6 +38,9 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
         log_write('[test mode]')
     log_write('[server name : {}]'.format('%s' % os.uname()[1]))
     log_write('[set log file at : {}]'.format(log_write.log_file))
+
+    if(ignore_abnormal_termination):
+        log_write('[ignoreing abnormal termination mode]')
 
     if(parameter_file is None):
         raise ValueError('parameter file must be set')
@@ -97,7 +102,8 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
                 json_data['experiments'][key]['simulate_params'][key_temp] = value_dict_temp[key_temp] 
 
         json_data['experiments'][key]['experiment_params']['experiment_dir'] = experiment_directory
-        operate_simulations(json_data['experiments'][key],experiment_tag,log_write,command_data,structured_output=structured_output)
+        operate_simulations(json_data['experiments'][key],experiment_tag,log_write,command_data,
+                            structured_output=structured_output,ignore_abnormal_termination=ignore_abnormal_termination)
         log_write.decrease_indent()
         log_write('[{0}][end experiment : {1} : lap time : {2}]'.format(key,stop_watch.lap_end(),stop_watch.lap_time()))
         previous_key = key
@@ -110,7 +116,8 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, test
     shutil.copy(log_file,os.path.join(experiment_directory,'log.dat'))
 
 
-def operate_simulations(param_dict_original,experiment_tag,log_write,command_data,structured_output=True):
+def operate_simulations(param_dict_original,experiment_tag,log_write,command_data,
+                        structured_output=True,ignore_abnormal_termination=False):
     stop_watch = StopWatch()
     setting_manager = SettingManager(log_write) 
 
@@ -161,7 +168,8 @@ def operate_simulations(param_dict_original,experiment_tag,log_write,command_dat
             setting_manager.set_directory(result_directory)
         else:
             result_directory = simulate_directory
-        execute_simulation(command_name,simulate_params,result_directory,log_write,command_data)
+        execute_simulation(command_name,simulate_params,result_directory,log_write,command_data,
+                           ignore_abnormal_termination=ignore_abnormal_termination)
         simulate_number += 1
         log_write.decrease_indent()
 
@@ -171,7 +179,8 @@ def operate_simulations(param_dict_original,experiment_tag,log_write,command_dat
     log_write('[all simulations complete]')
 
 
-def execute_simulation(command_name,simulate_params,result_directory,log_write,command_data): 
+def execute_simulation(command_name,simulate_params,result_directory,log_write,
+                       command_data,ignore_abnormal_termination=False): 
     stop_watch = StopWatch()
     setting_manager = SettingManager(log_write) 
 
@@ -204,7 +213,8 @@ def execute_simulation(command_name,simulate_params,result_directory,log_write,c
         log_write.reset_indent()
         log_write('[Error End !]')
         setting_manager.json_set(param_dict,parameter_file_each_simulation)
-        raise ValueError('[Abnormal termination detected : return_value : {}]'.format(return_value))
+        if(not ignore_abnormal_termination):
+            raise ValueError('[Abnormal termination detected : return_value : {}]'.format(return_value))
     setting_manager.json_set(param_dict,parameter_file_each_simulation)
 
 
@@ -259,7 +269,7 @@ def set_total_combinations(simulate_params,log_write):
             counter = 0
             local_variable_dict = {}
             for key_t in simulate_params.keys():
-                if(key_t != key and re.search( r'\b(?u)' + key_t+ r'\b',simulate_params[key])):
+                if(key_t != key and re.search( r'\b' + key_t+ r'\b',simulate_params[key])):
                     counter += 1
                     if(not isinstance(simulate_params[key_t], list) and not isinstance(simulate_params[key_t],str)):
                         local_variable_dict[key_t] = simulate_params[key_t]
@@ -287,7 +297,7 @@ def set_simulate_params(simulate_params,combination):
         if(isinstance(simulate_params[key], str)):
             local_variable_dict = {}
             for key_t in simulate_params.keys():
-                if(key_t != key and re.search( r'\b(?u)' + key_t+ r'\b',simulate_params[key])):
+                if(key_t != key and re.search( r'\b' + key_t+ r'\b',simulate_params[key])):
                     local_variable_dict[key_t] = simulate_params[key_t]
             try:
                 calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
@@ -402,49 +412,62 @@ class CommandManager:
         print('test simulate end')
 
 
-def log_check(top_directory):
-    files_list = os.listdir(top_directory)
-    experiment_dir_list  = [x for x in files_list if 'experiment' in x and os.path.isdir(os.path.join(top_directory, x))]
-    date_dir_list  = [x for x in files_list if len(x.split('-')) > 5 and os.path.isdir(os.path.join(top_directory, x))]
-    print('[top directory : {}]'.format(top_directory))
-    if(len(experiment_dir_list) > 0):
-        print('[top directory is root of experiments : plot all log in experiments]')
-        plot_log(top_directory)
-    elif(len(date_dir_list) > 0):
-        print('[top directory is root of data]')
-        for target_directory in date_dir_list:
-            color_print('[{0}]'.format(target_directory),'GREEN')
-            plot_log(os.path.join(top_directory,target_directory))
+def log_check(target):
+    if os.path.exists(target) and not os.path.isdir(target):
+        print('[input log file : {}]'.format(target))
+        _log_check(target)
+    elif os.path.isdir(target):
+        top_directory = target
+        elements_list = os.listdir(top_directory)
+        for element in elements_list:
+            experiment_dir_list = []
+            date_dir_list = []
+            if 'experiment' in element and os.path.isdir(os.path.join(top_directory, element)):
+                experiment_dir_list.append(element)
+            if len(element.split('-')) > 5 and os.path.isdir(os.path.join(top_directory, element)):
+                date_dir_list.append(element)
+        print('[top directory : {}]'.format(top_directory))
+        if(len(experiment_dir_list) > 0):
+            print('[top directory is root of experiments : plot all log in experiments]')
+            plot_log(top_directory)
+        elif(len(date_dir_list) > 0):
+            print('[top directory is root of data]')
+            for target_directory in date_dir_list:
+                color_print('[{0}]'.format(target_directory),'GREEN')
+                plot_log(os.path.join(top_directory,target_directory))
+        else:
+          print('[Not root of results : all "log*.dat"]')
+          for element in elements_list:
+              if('log' in element):
+                    log_file_name = element
+                    color_print('[{0} : {1}]'.format(top_directory,log_file_name),'GREEN')
+                    log_file_path = os.path.join(top_directory,log_file_name)
+                    _log_check(log_file_path)
+        print('[complete print]')
+
+
+def _log_check(log_file_path):
+    log_file = open(log_file_path,'r')
+    whole_lines = log_file.readlines()
+    length_lines = len(whole_lines)
+    parameter_declare = [x for x in whole_lines if 'parameter file' in x]
+    parameter_declare = parameter_declare[0].split('\n')[0]
+    print(parameter_declare)
+    target_dir_list = [x for x in whole_lines if 'set result output directory' in x] 
+    if(len(target_dir_list) == 1):
+        target_directory = target_dir_list[0].split(' ')[-1].split(']')[0]
+        current_directory_path = os.getcwd()
+        target_directory = os.path.join(current_directory_path, target_directory)
+        if(os.path.isdir(target_directory)):
+            print('[result directory : {}]'.format(target_directory))
+            workstation = [x for x in whole_lines if 'server name' in x]
+            workstation = workstation[0].split('\n')[0]
+            print(workstation)
+            plot_log(target_directory)
+        else:
+            print('  [Error! {} des not exist]'.format(target_directory))
     else:
-      print('[Not root of results : all "log*.dat"]')
-      for key in files_list:
-          if('log' in key):
-            log_file_name = key 
-            color_print('[{0} : {1}]'.format(top_directory,log_file_name),'GREEN')
-            log_file_path = os.path.join(top_directory,log_file_name)
-            log_file = open(log_file_path,'r')
-            whole_lines = log_file.readlines()
-            length_lines = len(whole_lines)
-            parameter_declare = [x for x in whole_lines if 'parameter file' in x]
-            parameter_declare = parameter_declare[0].split('\n')[0]
-            print(parameter_declare)
-            target_dir_list = [x for x in whole_lines if 'set result output directory' in x] 
-            if(len(target_dir_list) == 1):
-                target_directory = target_dir_list[0].split(' ')[-1].split(']')[0]
-                top_directory_path = os.path.abspath(top_directory)
-                upstairs_top_directory_path = os.path.dirname(top_directory_path)
-                target_directory = os.path.join(upstairs_top_directory_path,target_directory)
-                if(os.path.isdir(target_directory)):
-                    print('[result directory : {}]'.format(target_directory))
-                    workstation = [x for x in whole_lines if 'server name' in x]
-                    workstation = workstation[0].split('\n')[0]
-                    print(workstation)
-                    plot_log(target_directory)
-                else:
-                    print('  [Error! {} des not exist]'.format(target_directory))
-            else:
-                print('[Error! {} has no expected form]'.format(log_file_path))
-    print('[complete print]')
+        print('[Error! {} has no expected form]'.format(log_file_path))
 
 
 def plot_log(target_directory):
