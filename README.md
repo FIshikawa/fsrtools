@@ -9,9 +9,7 @@ The package has some console tools.
 -  "fsrsimulate" is a simulator which is like wrapper.
 
 ## installation
-`pip install -e fsrtools --user -U`
-
-You should add `.local/bin/` to PATH for the console tools.
+`pip install -e fsrtools`
 
 ## requirement
 Python 3.6.5
