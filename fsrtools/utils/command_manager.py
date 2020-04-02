@@ -4,6 +4,7 @@ import fsrtools
 
 from fsrtools.utils import LogManager
 from fsrtools.utils import SettingManager
+from fsrtools.utils.colors import *
 
 def _commands_json_file(test=False):
     if test:
