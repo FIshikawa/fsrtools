@@ -39,6 +39,9 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False,
     log_write('[server name : {}]'.format('%s' % os.uname()[1]))
     log_write('[set log file at : {}]'.format(log_write.log_file))
 
+    if(ignore_abnormal_termination):
+        log_write('[ignoreing abnormal termination mode]')
+
     if(parameter_file is None):
         raise ValueError('parameter file must be set')
     log_write('[parameter file : {}]'.format(parameter_file))  
@@ -409,48 +412,62 @@ class CommandManager:
         print('test simulate end')
 
 
-def log_check(top_directory):
-    files_list = os.listdir(top_directory)
-    experiment_dir_list  = [x for x in files_list if 'experiment' in x and os.path.isdir(os.path.join(top_directory, x))]
-    date_dir_list  = [x for x in files_list if len(x.split('-')) > 5 and os.path.isdir(os.path.join(top_directory, x))]
-    print('[top directory : {}]'.format(top_directory))
-    if(len(experiment_dir_list) > 0):
-        print('[top directory is root of experiments : plot all log in experiments]')
-        plot_log(top_directory)
-    elif(len(date_dir_list) > 0):
-        print('[top directory is root of data]')
-        for target_directory in date_dir_list:
-            color_print('[{0}]'.format(target_directory),'GREEN')
-            plot_log(os.path.join(top_directory,target_directory))
+def log_check(target):
+    if os.path.exists(target) and not os.path.isdir(target):
+        print('[input log file : {}]'.format(target))
+        _log_check(target)
+    elif os.path.isdir(target):
+        top_directory = target
+        elements_list = os.listdir(top_directory)
+        for element in elements_list:
+            experiment_dir_list = []
+            date_dir_list = []
+            if 'experiment' in element and os.path.isdir(os.path.join(top_directory, element)):
+                experiment_dir_list.append(element)
+            if len(element.split('-')) > 5 and os.path.isdir(os.path.join(top_directory, element)):
+                date_dir_list.append(element)
+        print('[top directory : {}]'.format(top_directory))
+        if(len(experiment_dir_list) > 0):
+            print('[top directory is root of experiments : plot all log in experiments]')
+            plot_log(top_directory)
+        elif(len(date_dir_list) > 0):
+            print('[top directory is root of data]')
+            for target_directory in date_dir_list:
+                color_print('[{0}]'.format(target_directory),'GREEN')
+                plot_log(os.path.join(top_directory,target_directory))
+        else:
+          print('[Not root of results : all "log*.dat"]')
+          for element in elements_list:
+              if('log' in element):
+                    log_file_name = element
+                    color_print('[{0} : {1}]'.format(top_directory,log_file_name),'GREEN')
+                    log_file_path = os.path.join(top_directory,log_file_name)
+                    _log_check(log_file_path)
+        print('[complete print]')
+
+
+def _log_check(log_file_path):
+    log_file = open(log_file_path,'r')
+    whole_lines = log_file.readlines()
+    length_lines = len(whole_lines)
+    parameter_declare = [x for x in whole_lines if 'parameter file' in x]
+    parameter_declare = parameter_declare[0].split('\n')[0]
+    print(parameter_declare)
+    target_dir_list = [x for x in whole_lines if 'set result output directory' in x] 
+    if(len(target_dir_list) == 1):
+        target_directory = target_dir_list[0].split(' ')[-1].split(']')[0]
+        current_directory_path = os.getcwd()
+        target_directory = os.path.join(current_directory_path, target_directory)
+        if(os.path.isdir(target_directory)):
+            print('[result directory : {}]'.format(target_directory))
+            workstation = [x for x in whole_lines if 'server name' in x]
+            workstation = workstation[0].split('\n')[0]
+            print(workstation)
+            plot_log(target_directory)
+        else:
+            print('  [Error! {} des not exist]'.format(target_directory))
     else:
-      print('[Not root of results : all "log*.dat"]')
-      for key in files_list:
-          if('log' in key):
-            log_file_name = key 
-            color_print('[{0} : {1}]'.format(top_directory,log_file_name),'GREEN')
-            log_file_path = os.path.join(top_directory,log_file_name)
-            log_file = open(log_file_path,'r')
-            whole_lines = log_file.readlines()
-            length_lines = len(whole_lines)
-            parameter_declare = [x for x in whole_lines if 'parameter file' in x]
-            parameter_declare = parameter_declare[0].split('\n')[0]
-            print(parameter_declare)
-            target_dir_list = [x for x in whole_lines if 'set result output directory' in x] 
-            if(len(target_dir_list) == 1):
-                target_directory = target_dir_list[0].split(' ')[-1].split(']')[0]
-                current_directory_path = os.getcwd()
-                target_directory = os.path.join(current_directory_path, target_directory)
-                if(os.path.isdir(target_directory)):
-                    print('[result directory : {}]'.format(target_directory))
-                    workstation = [x for x in whole_lines if 'server name' in x]
-                    workstation = workstation[0].split('\n')[0]
-                    print(workstation)
-                    plot_log(target_directory)
-                else:
-                    print('  [Error! {} des not exist]'.format(target_directory))
-            else:
-                print('[Error! {} has no expected form]'.format(log_file_path))
-    print('[complete print]')
+        print('[Error! {} has no expected form]'.format(log_file_path))
 
 
 def plot_log(target_directory):
