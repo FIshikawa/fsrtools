@@ -23,6 +23,7 @@ $ source your_directory/bin/activate
 ```  
 
 ## Tutorial 
+## fsrsimulate
 In three steps, you can execute your programs with this manager.
 
 ### First step : register your program in fsrsimulate.
