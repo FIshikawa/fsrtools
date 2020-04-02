@@ -1,3 +1,5 @@
+![](https://github.com/FIshikawa/fsrtools/workflows/Python%20package/badge.svg)
+
 # fsrtools
 
 "fsrtools" is management tools made by F.Ishikawa
@@ -61,7 +63,7 @@ save now defined commands
 ```
 As you can see, the input form is a directory class of python.
 The key, "hello_world", is the name of the command.
-The list, `['python','./hello_world.py','N_loop']`, is a list corresponding to executed code on console.
+The list, `['python','hello_world.py','N_loop']`, is a list corresponding to executed code on console.
 The `N_loop` is a parameter that is the number of iterations.
 Final sentence, `fsrsimulate.save()`, save the registered commands.
 If you forget this, you cannot use the command.
