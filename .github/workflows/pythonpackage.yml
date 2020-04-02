@@ -42,5 +42,5 @@ jobs:
     - name: Install and test fsrtools
       run: |
         pip install -e fsrtools
-        cd fsrtools
+        cd fsrtools/
         pytest test 
