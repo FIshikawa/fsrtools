@@ -46,7 +46,7 @@ You can resistor your program though the interactive console by IPython.
 Here, one example is showed by using a simple python code, "hello_world.py", in the tutorial directory.
 This code accepts an argument on the console like, 
 ```bash
-python hell_world.py 2
+$ python hell_world.py 2
 Hello World!
 Hello World!
 ```
