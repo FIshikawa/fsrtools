@@ -3,23 +3,35 @@
 
 import argparse
 from IPython.terminal.embed import InteractiveShellEmbed
-from fsrtools.simulate_tools import CommandManager
-from fsrtools.simulate_tools import operate_experiments
-from fsrtools.simulate_tools import log_check
-from fsrtools.util import colors
-from fsrtools.util import color_print
+from fsrtools.simulation_tools import SimulationManager
+from fsrtools.utils import log_check
+from fsrtools.utils import colors
+from fsrtools.utils import color_print
+from fsrtools.utils import CommandManager
 
 def main():
-    parser = argparse.ArgumentParser(description='Simulation Management Script',add_help=True)
+    parser = argparse.ArgumentParser(
+                description='Simulation Management Script',add_help=True)
 
-    parser.add_argument('-j','--json',action='store',default=None,type=str,help='input parameter json file')
-    parser.add_argument('-t','--test',action='store_true',help='test mode option')
-    parser.add_argument('--log',action='store',type=str,help='directory input : all log plot, file input : plot the file.')
-    parser.add_argument('--cout',action='store_true',help='out calculation')
-    parser.add_argument('-lf','--log_file',action='store', default='log.dat',type=str,help='log file name : default "log.dat" or "log_test.dat" in test mode')
-    parser.add_argument('--off_structured_output',action='store_true',help='structured output option')
-    parser.add_argument('--ignore_abnormal_termination',action='store_true',help='ignoring abnormal termination option')
-    parser.add_argument('--set_commands',action='store_true',help='set command mode : via IPython')
+    parser.add_argument('-j','--json',action='store',default=None,type=str,
+                        help='input parameter json file')
+    parser.add_argument('-t','--test',action='store_true',
+                        help='test mode option')
+    parser.add_argument('--log',action='store',type=str,
+                        help='directory input : all log plot, \
+                                          file input : plot the file.')
+    parser.add_argument('--cout',action='store_true',
+                        help='out calculation')
+    parser.add_argument('-lf','--log_file',action='store',default='log.dat',
+                        type=str,
+                        help='log file name : \
+                          default "log.dat" or "log_test.dat" in test mode')
+    parser.add_argument('--off_structured_output',action='store_true',
+                        help='structured output option')
+    parser.add_argument('--ignore_abnormal_termination',action='store_true',
+                        help='ignoring abnormal termination option')
+    parser.add_argument('--set_commands',action='store_true',
+                        help='set command mode : via IPython')
 
     args = vars(parser.parse_args())
     if(args['set_commands']):
@@ -42,15 +54,19 @@ def main():
         command_data = fsrsimulate.command_data
         structured_output_flag = not args['off_structured_output']
         ignore_abnormal_termination = args['ignore_abnormal_termination']
-        operate_experiments(
-                            parameter_file=args['json'],
-                            log_file=args['log_file'],
-                            cout_tag=args['cout'],
-                            test_mode=args['test'],
-                            command_data=command_data,
-                            structured_output=structured_output_flag,
-                            ignore_abnormal_termination=ignore_abnormal_termination
-                            )
+        simulation_manager = SimulationManager(
+                                               parameter_file=args['json'],
+                                               log_file=args['log_file'],
+                                               cout_tag=args['cout'],
+                                               test_mode=args['test'],
+                                               command_data=command_data,
+                                               structured_output= \
+                                                    structured_output_flag,
+                                               ignore_abnormal_termination=\
+                                                ignore_abnormal_termination
+                                               )
+        simulation_manager()
+
 
 
 if __name__ == '__main__':
