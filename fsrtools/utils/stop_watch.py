@@ -37,7 +37,7 @@ class StopWatch:
         if format is None: 
             return time.strftime('%Y/%m/%d %H:%M:%S', end_time_cnv)
         else:
-            return time.strftime(format, start_time_cnv)
+            return time.strftime(format, end_time_cnv)
 
     def duration(self):
         self._duration = datetime.timedelta(seconds=self._end_time - self._start_time)
