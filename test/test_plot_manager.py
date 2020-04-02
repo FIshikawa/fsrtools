@@ -2,10 +2,11 @@ import shutil
 import json
 import os
 import pytest
-import fsrtools.view_tools as fsrview 
-import fsrtools.simulate_tools as fsrsimulate
+import fsrtools.plot_manager as fsrview 
+import fsrtools.simulate_manager as fsrsimulate
+from fsrtools.utils import CommandManager
 
-class CommandManagerTest(fsrsimulate.CommandManager):
+class CommandManagerTest(CommandManager):
     def __init__(self):
         super(fsrsimulate.CommandManager,self).__init__()
         self._json_path = fsrsimulate._commands_json_file(test=True)

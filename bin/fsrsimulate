@@ -3,11 +3,11 @@
 
 import argparse
 from IPython.terminal.embed import InteractiveShellEmbed
-from fsrtools.simulate_tools import CommandManager
-from fsrtools.simulate_tools import operate_experiments
-from fsrtools.simulate_tools import log_check
-from fsrtools.util import colors
-from fsrtools.util import color_print
+from fsrtools.simulation_manager import SimulationManager
+from fsrtools.utils import log_check
+from fsrtools.utils import colors
+from fsrtools.utils import color_print
+from fsrtools.utils import CommandManager
 
 def main():
     parser = argparse.ArgumentParser(description='Simulation Management Script',add_help=True)

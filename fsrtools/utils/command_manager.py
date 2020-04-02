@@ -1,9 +1,19 @@
+import os 
+import json
+import fsrtools
 
+def _commands_json_file(test=False):
+    if(test):
+        return os.path.join(fsrtools.__path__[0],
+                            'config/commands_test.json')
+    else:
+        return os.path.join(fsrtools.__path__[0],
+                            'config/commands.json')
 
 
 class CommandManager:
-    def __init__(self):
-        self._json_path = _commands_json_file()
+    def __init__(self,test=False):
+        self._json_path = _commands_json_file(test)
         if(os.path.exists(self._json_path)):
             commands_json = open(self._json_path)
             self.command_data = json.load(commands_json)
