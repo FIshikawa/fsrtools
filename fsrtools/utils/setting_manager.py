@@ -1,3 +1,5 @@
+import os
+import json
 
 class SettingManager:
     """
@@ -12,7 +14,7 @@ class SettingManager:
         self._log_manager = log_manager
 
     def set_directory(self,directory_name):
-        if(os.path.exists(directory_name) != True):
+        if os.path.exists(directory_name) != True:
           os.mkdir(directory_name)
           self._log_manager('[Create : {}]'.format(directory_name))
         else:

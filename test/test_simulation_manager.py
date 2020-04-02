@@ -2,8 +2,9 @@ import pytest
 import json
 import shutil
 import os
-from fsrtool.simulation_manager._simulation_manager import *
-from fsrtool.simulation_manager import SimulationManager
+from fsrtools.simulation_tools._manager_utils import *
+from fsrtools.utils.set_total_combinations import *
+from fsrtools.simulation_tools import SimulationManager
 from test_command_manager import CommandManagerTest
 
 def test_integer_filter():
@@ -102,5 +103,11 @@ def test_operate_experiments(set_data_for_test):
     log_file = pytest.log_file
     parameter_json = pytest.parameter_json
     command_data = pytest.command_data
-    operate_experiments(parameter_file=parameter_json,log_file=log_file,test_mode=True,command_data=command_data)
+    simulate_manager = SimulationManager(
+                                         parameter_file=parameter_json,
+                                         log_file=log_file,
+                                         test_mode=True,
+                                         command_data=command_data
+                                         )
+    simulate_manager()
 

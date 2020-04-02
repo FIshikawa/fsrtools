@@ -6,7 +6,9 @@ from fsrtools.utils import StopWatch
 from fsrtools.utils import SettingManager
 from fsrtools.utils import LogManager
 from fsrtools.utils import set_total_combinations
-from fsrtools.simulation_tools._simulation_manager import *
+from fsrtools.simulation_tools._manager_utils import set_execute_command
+from fsrtools.simulation_tools._manager_utils import set_simulate_params
+from fsrtools.simulation_tools._manager_utils import integer_filter
 
 class SimulationManager:
     """Simulation manager class. It manage executing simulations with the parameter file formed jason.
@@ -46,16 +48,16 @@ class SimulationManager:
         current_directory = os.getcwd()
         log_file = os.path.join(current_directory, log_file)
 
-        self.self.logger = LogManager(log_file=log_file,cout_tag=cout_tag)
+        self.logger = LogManager(log_file=log_file,cout_tag=cout_tag)
 
-        self.setter = SettingManager(self.self.logger) 
+        self.setter = SettingManager(self.logger) 
 
     def __call__(self):
         timer = StopWatch()
 
-        self.self.logger('[start time : {}]'.format(timer.start()))
+        self.logger('[start time : {}]'.format(timer.start()))
         if self.test_mode :
-            self.self.logger('[test mode]')
+            self.logger('[test mode]')
         self.logger('[server name : {}]'.format('%s' % os.uname()[1]))
         self.logger('[set log file at : {}]'.format(self.logger.log_file))
 
@@ -68,8 +70,8 @@ class SimulationManager:
         json_file = open(self.parameter_file,'r')
         json_data = json.load(json_file)
 
-        if(self.test_mode):
-            if(json_data['experiment_dir'] != 'test/'): 
+        if self.test_mode:
+            if json_data['experiment_dir'] != 'test/': 
                 self.logger('[experiment_dir is not "test/" : set]')
                 json_data['experiment_dir'] = 'test/'
 
@@ -85,18 +87,18 @@ class SimulationManager:
         for key, params in json_data['experiments'].items():
             num_of_params = len(params['simulate_params'])
             self.logger(' [{0} : number of simulate params: {1}]'
-                    .format(key,num_of_param)) 
+                        .format(key,num_of_params)) 
 
-        if(self.test_mode):
-            for key0, params_dict in json_data['experiments'].items:
+        if self.test_mode:
+            for key0, params_dict in json_data['experiments'].items():
                 self.logger('[{0}]'.format(key0))
-                for key1, params in params_dict.intems():
+                for key1, params in params_dict.items():
                     self.logger(' [{0}]'.format(key1))
                     for key2, param in params.items():
                         self.logger('   {0} : {1}'.format(key2, param))
 
         # set result directories 
-        if(self.structured_output):
+        if self.structured_output:
             unique_name = timer.start_time(format='%Y-%m-%d-%H-%M-%S')
             top_directory = json_data['experiment_dir']
             total_directory = os.path.join(top_directory, unique_name)
@@ -119,7 +121,7 @@ class SimulationManager:
 
         json_data['time_info'] = {}
         json_data['time_info']['start_time'] = timer.start()
-        self.self.logger('[start time : {}]'.format(timer.start()))
+        self.logger('[start time : {}]'.format(timer.start()))
 
         parameter_file_for_record = os.path.join(total_directory,
                                                  'parameter.json')
@@ -127,7 +129,7 @@ class SimulationManager:
 
         for tag, params in json_data['experiments'].items():
             self.logger('[{0}][start experiment : {1}]'
-                    .format(key,timer.lap_start()))
+                            .format(tag, timer.lap_start()))
             self.logger.add_indent()
             params['experiment_params']['experiment_dir'] = total_directory
             params['experiment_params']['experiment_tag'] = tag
@@ -136,14 +138,15 @@ class SimulationManager:
 
             self.logger.decrease_indent()
             self.logger('[{0}][end experiment : {1} : lap time : {2}]'
-                    .format(key,timer.lap_end(),stop_watch.lap_time()))
+                    .format(tag, timer.lap_end(), timer.lap_time()))
 
         self.logger('[finish time : {}]'.format(timer.end()))
         self.logger('[duration : {}]'.format(timer.duration()))
         json_data['time_info']['finish_time'] = timer.end_time()
         json_data['time_info']['duration'] = timer.duration()
         self.setter.json_set(json_data, parameter_file_for_record)
-        shutil.copy(log_file,os.path.join(total_directory,'log.dat'))
+        shutil.copy(self.logger.log_file,
+                        os.path.join(total_directory,'log.dat'))
 
     def operate_simulations(self,params_original,experiment_tag):
         timer = StopWatch()
@@ -157,7 +160,7 @@ class SimulationManager:
 
         self.setter.set_directory(experiment_directory)
 
-        if(structured_output):
+        if self.structured_output:
             simulate_directory = os.path.join(experiment_directory,
                                               experiment_tag) 
             self.setter.set_directory(simulate_directory)
@@ -181,7 +184,7 @@ class SimulationManager:
         num_total_combinations = len(total_combinations)
 
         simulate_number = 1
-        if(num_total_combinations):
+        if num_total_combinations:
             num_simulations = num_total_combinations
             self.logger('[total number of simulations : {}]'
                          .format(num_simulations))
@@ -194,7 +197,7 @@ class SimulationManager:
     
         for i in range(max(num_total_combinations,1)):
 
-            if(num_total_combinations):
+            if num_total_combinations:
                 simulate_params = \
                 set_simulate_params(simulate_params_original, 
                                     total_combinations[i])
@@ -203,7 +206,7 @@ class SimulationManager:
             self.logger('[simulation : number-{}]'.format(simulate_number))
             self.logger.add_indent()
 
-            if(structured_output):
+            if self.structured_output:
                 result_directory = \
                     os.path.join(simulate_directory,
                                  'number-' + str(simulate_number) + '/')
@@ -223,54 +226,56 @@ class SimulationManager:
         self.setter.json_set(params_original,parameter_file_simulation)
         self.logger('[all simulations complete]')
 
-#    def execute_simulation(self,
-#                           command_name,
-#                           simulate_params,
-#                           result_directory)
-#        timer = StopWatch()
-#    
-#        records = {}
-#        records['command_name'] = command_name
-#        records['simulate_params'] = simulate_params.copy()
-#        records['simulate_params']['result_directory'] = result_directory
-#        records['time_info'] = {}
-#        records['time_info']['start_time'] = timer.start()
-#
-#        parameter_file_each = \
-#                        os.path.join(result_directory, 'parameter.json')
-#        self.setter.json_set(records,parameter_file_each)
-#    
-#        execute_command = set_execute_command(command_name,
-#                                              simulate_params,
-#                                              self.logger,
-#                                              self.command_data)
-#
-#        self.logger('[execute : {}]'.format(timer.start_time()))
-#        log_open = open(self.logger.log_file,'a')
-#        if self.logger.cout_tag:
-#            p = subprocess.Popen(execute_command)
-#        else:
-#            p = subprocess.Popen(execute_command,
-#                                 stdout=log_open,
-#                                 stderr=log_open)
-#        p.wait()
-#        log_open.close()
-#        return_value = p.wait()
-#        self.logger('[finish  : {}]'.format(timer.end()))
-#
-#        records['time_info']['end_time'] = timer.end_time()
-#        records['time_info']['duration'] = timer.duration()
-#
-#        if return_value != 0:
-#            remark = 'Abnormal termination : return value : {}'
-#                         .format(return_value)
-#            records['time_info']['remark'] = remark
-#            self.logger(remark)
-#            self.logger.reset_indent()
-#            self.logger('[Error End !]')
-#            self.setter.json_set(records,parameter_file_each_simulation)
-#            if not ignore_abnormal_termination :
-#                raise ValueError(remark)
-#
-#        self.setter.json_set(records,parameter_file_each)
+    def execute_simulation(self,
+                           command_name,
+                           simulate_params,
+                           result_directory):
+        timer = StopWatch()
+    
+        executed_params = simulate_params.copy()
+        executed_params['result_directory'] = result_directory
+
+        records = {}
+        records['command_name'] = command_name
+        records['simulate_params'] = executed_params.copy()
+        records['time_info'] = {}
+        records['time_info']['start_time'] = timer.start()
+
+        parameter_file_each = \
+                        os.path.join(result_directory, 'parameter.json')
+        self.setter.json_set(records,parameter_file_each)
+    
+        execute_command = set_execute_command(command_name,
+                                              executed_params,
+                                              self.logger,
+                                              self.command_data)
+
+        self.logger('[execute : {}]'.format(timer.start_time()))
+        log_open = open(self.logger.log_file,'a')
+        if self.logger.cout_tag:
+            p = subprocess.Popen(execute_command)
+        else:
+            p = subprocess.Popen(execute_command,
+                                 stdout=log_open,
+                                 stderr=log_open)
+        p.wait()
+        log_open.close()
+        return_value = p.wait()
+        self.logger('[finish  : {}]'.format(timer.end()))
+
+        records['time_info']['end_time'] = timer.end_time()
+        records['time_info']['duration'] = timer.duration()
+
+        if return_value != 0:
+            remark = \
+                'Abnormal termination : return : {}'.format(return_value)
+            records['time_info']['remark'] = remark
+            self.logger(remark)
+            self.logger.reset_indent()
+            self.logger('[Error End !]')
+            self.setter.json_set(records,parameter_file_each)
+            if not self.ignore_abnormal_termination :
+                raise ValueError(remark)
+
+        self.setter.json_set(records,parameter_file_each)
 

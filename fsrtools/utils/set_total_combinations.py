@@ -1,8 +1,11 @@
+import re
+from fsrtools.simulation_tools._manager_utils import integer_filter
+
 def product_combination_generator(iterate_dict):
     total_length = 1 
     length_dict = {}
     combination_list = []
-    if(len(iterate_dict.keys()) > 0):
+    if len(iterate_dict.keys()):
         for key in iterate_dict.keys():
             length_dict[key] = len(iterate_dict[key])
             total_length = total_length * len(iterate_dict[key])
@@ -22,28 +25,37 @@ def set_total_combinations(simulate_params,logger):
     simulate_params_temp = simulate_params.copy()
     iterate_dict = {}
     for key in simulate_params.keys():
-        if(isinstance(simulate_params[key], list)):
+        if isinstance(simulate_params[key], list):
             iterate_dict[key] = simulate_params[key]
             logger('[list input : {0} : {1}]'.format(key, simulate_params[key]))
-        elif(isinstance(simulate_params[key], str)):
+        elif isinstance(simulate_params[key], str):
             counter = 0
-            local_variable_dict = {}
+            local_variables = {}
             for key_t in simulate_params.keys():
-                if(key_t != key and re.search( r'\b' + key_t+ r'\b',simulate_params[key])):
+                if key_t != key and \
+                    re.search( r'\b' + key_t+ r'\b',simulate_params[key]):
                     counter += 1
-                    if(not isinstance(simulate_params[key_t], list) and not isinstance(simulate_params[key_t],str)):
-                        local_variable_dict[key_t] = simulate_params[key_t]
-            if(len(local_variable_dict) == counter):
+
+                    if not isinstance(simulate_params[key_t], list) and \
+                                not isinstance(simulate_params[key_t],str):
+
+                        local_variables[key_t] = simulate_params[key_t]
+            if len(local_variables) == counter:
                 try:
-                    calculated_value  = eval(simulate_params[key],globals(),local_variable_dict)
-                    simulate_params_temp[key] = integer_filter(calculated_value)
+                    calculated_value = \
+                    eval(simulate_params[key],globals(),local_variables)
+                    simulate_params_temp[key] = \
+                                        integer_filter(calculated_value)
                 except NameError as err:
-                    logger('[{} as paremter : "{}" is input as "{}"]'.format(err,key,simulate_params[key]))
+                    logger('[{} as paremter : "{}" is input as "{}"]'
+                                    .format(err,key,simulate_params[key]))
+
                     simulate_params_temp[key] = simulate_params[key]
                 logger('[{0} : {1}]'.format(key, simulate_params_temp[key]))
             else:
-                for key_t in local_variable_dict.keys():
-                    logger('{0} is set at execute command set : depend on changing {1}'.format(key,key_t))
+                for key_t in local_variables.keys():
+                    logger('{0} is as command: depend on changing {1}'
+                            .format(key,key_t))
 
     total_combinations = product_combination_generator(iterate_dict)
     return simulate_params_temp,  total_combinations

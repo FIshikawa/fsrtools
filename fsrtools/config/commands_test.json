@@ -1,0 +1,14 @@
+{
+    "create_data": [
+        "python",
+        "./test/create_data.py",
+        "result_directory",
+        "N_x",
+        "N_y"
+    ],
+    "hello_world": [
+        "python",
+        "./test/hello_world.py",
+        "N_loop"
+    ]
+}

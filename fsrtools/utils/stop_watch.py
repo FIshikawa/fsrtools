@@ -22,7 +22,7 @@ class StopWatch:
 
     def start_time(self,format=None):
         start_time_cnv = time.localtime(self._start_time)
-        if(format is None): 
+        if format is None: 
             return time.strftime('%Y/%m/%d %H:%M:%S', start_time_cnv)
         else:
             return time.strftime(format, start_time_cnv)
@@ -34,7 +34,7 @@ class StopWatch:
 
     def end_time(self, format=None):
         end_time_cnv = time.localtime(self._end_time)
-        if(format is None): 
+        if format is None: 
             return time.strftime('%Y/%m/%d %H:%M:%S', end_time_cnv)
         else:
             return time.strftime(format, start_time_cnv)

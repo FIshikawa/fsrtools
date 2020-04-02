@@ -2,21 +2,10 @@ import shutil
 import json
 import os
 import pytest
-import fsrtools.plot_manager as fsrview 
-import fsrtools.simulate_manager as fsrsimulate
-from fsrtools.utils import CommandManager
-
-class CommandManagerTest(CommandManager):
-    def __init__(self):
-        super(fsrsimulate.CommandManager,self).__init__()
-        self._json_path = fsrsimulate._commands_json_file(test=True)
-        if(os.path.exists(self._json_path)):
-            commands_json = open(self._json_path)
-            self.command_data = json.load(commands_json)
-            self.command_name_list = list(self.command_data.keys())
-        else:
-            self.command_data = {}
-            self.command_name_list= []
+from fsrtools.plot_manager import PlotManager
+from fsrtools.plot_manager.plot_manager import set_data_map
+from fsrtools.simulation_tools import SimulationManager
+from test_command_manager import CommandManagerTest
 
 
 @pytest.fixture(scope='session')
@@ -33,7 +22,13 @@ def set_data_for_test():
     log_file = 'test/log.dat'
     parameter_json = 'test/parameter_test.json'
     command_data = command_manager.command_data
-    fsrsimulate.operate_experiments(parameter_file=parameter_json,log_file=log_file,test_mode=False,command_data=command_data)
+    simulate_manager = SimulationManager(
+                                       parameter_file=parameter_json,
+                                       log_file=log_file,
+                                       test_mode=False,
+                                       command_data=command_data
+                                       )
+    simulate_manager()
     top_directory = ''
     with os.scandir('./test') as files:
         for entry in files:
@@ -42,7 +37,7 @@ def set_data_for_test():
                 break
     top_directory = os.path.join('./test',top_directory)
     pytest.top_directory = top_directory
-    pytest.plot_manager = fsrview.PlotManager(top_directory=top_directory)
+    pytest.plot_manager = PlotManager(top_directory=top_directory)
     print(pytest.top_directory)
     yield set_data_for_test
     command_manager.save()
@@ -56,7 +51,7 @@ def set_data_for_test():
 
 def test_set_data_map(set_data_for_test):
     top_directory = pytest.top_directory
-    config_data_map, result_data_map = fsrview.set_data_map(top_directory)
+    config_data_map, result_data_map = set_data_map(top_directory)
     print(config_data_map)
     print(result_data_map)
 

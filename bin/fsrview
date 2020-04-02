@@ -4,19 +4,27 @@
 import os
 import argparse
 from IPython.terminal.embed import InteractiveShellEmbed
-from fsrtools.view_tools import PlotManager
+from fsrtools.plot_manager import PlotManager
 from fsrtools.util import colors
 from fsrtools.util import color_print
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Visualize Results Scripts',add_help=True)
-    parser.add_argument('-d','--directory',action='store',type=str,help='result direcotry')
-    parser.add_argument('-f','--file',action='store',type=str,help='result file')
-    parser.add_argument('-ip','--interactive_plot',action='store_true',help='Plot Interactive mode : via IPython')
-    parser.add_argument('-pt','--plot_type',choices=['normal','totally','hist','3d'],help='plot option : with instant plot mode')
-    parser.add_argument('--log_scale',action='store_true',help='log scale plot : instant mode only')
-    parser.add_argument('-rl','--result_list',action='store',type=str,help='result list plot mode')
+    parser = argparse.ArgumentParser(
+                    description='Visualize Results Scripts',add_help=True)
+    parser.add_argument('-d','--directory',action='store',type=str,
+                        help='result direcotry')
+    parser.add_argument('-f','--file',action='store',type=str,
+                        help='result file')
+    parser.add_argument('-ip','--interactive_plot',action='store_true',
+                        help='Plot Interactive mode : via IPython')
+    parser.add_argument('-pt','--plot_type',
+                        choices=['normal','totally','hist','3d'],
+                        help='plot option : with instant plot mode')
+    parser.add_argument('--log_scale',action='store_true',
+                        help='log scale plot : instant mode only')
+    parser.add_argument('-rl','--result_list',action='store',type=str,
+                        help='result list plot mode')
 
     args = vars(parser.parse_args())
 
@@ -45,9 +53,12 @@ def main():
             file = args['file']
             fsrplot = PlotManager(file=file)
             if(args['plot_type']):
-                fsrplot.plot_result(file=file,plot_type=args['plot_type'],log_scale=args['log_scale'])
+                fsrplot.plot_result(file=file,
+                                    plot_type=args['plot_type'],
+                                    log_scale=args['log_scale'])
             else:
-                fsrplot.plot_result(file=file,log_scale=args['log_scale'])
+                fsrplot.plot_result(file=file,
+                                    log_scale=args['log_scale'])
             fsrplot.show()
         elif(args['directory']):
             directory_name = args['directory']
