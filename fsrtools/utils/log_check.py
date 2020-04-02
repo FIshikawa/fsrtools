@@ -33,7 +33,7 @@ def log_check(target):
         else:
           print('[Not root of results : all "log*.dat"]')
           for element in elements_list:
-              if 'log' in element:
+              if 'log' in element and 'dat' in element:
                     log_file_name = element
                     color_print('[{0} : {1}]'
                             .format(top_directory,log_file_name),'GREEN')
