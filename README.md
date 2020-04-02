@@ -1,4 +1,4 @@
-[![Actions Status](https://github.com/FIshikawa/fsrtools/workflows/Python package/badge.svg)](https://github.com/FIshikawa/fsrtools/actions)
+![](https://github.com/FIshikawa/fsrtools/workflows/Python%20package/badge.svg)
 
 # fsrtools
 
