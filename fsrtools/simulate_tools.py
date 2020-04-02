@@ -19,9 +19,14 @@ def _commands_json_file(test=False):
         return os.path.join(fsrtools.__path__[0],'config/commands.json')
 
 
-def operate_experiments(parameter_file=None, log_file=None, cout_tag=False, 
-                        test_mode=False,command_data=None,structured_output=True,
+def operate_experiments(parameter_file=None, 
+                        log_file=None, 
+                        cout_tag=False, 
+                        test_mode=False,
+                        command_data=None,
+                        structured_output=True,
                         ignore_abnormal_termination=False):
+
     current_directory = os.getcwd()
 
     if(test_mode):
@@ -56,9 +61,12 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False,
     log_write('[paramter data info]')
     log_write('[result directory : {}]'.format(json_data['experiment_dir']))
     setting_manager.set_directory(json_data['experiment_dir'])
-    log_write('[number of experiment : {}]'.format(len(json_data['experiments'].keys())))
+    num_of_experiments = len(json_data['experiments'].keys())
+    log_write('[number of experiment : {}]'.format(num_of_experiments))
+
     for key in json_data['experiments'].keys():
-        log_write(' [{0} : number of simulate params: {1}]'.format(key, len(json_data['experiments'][key]['simulate_params'].keys())))
+        num_of_simulate = len(json_data['experiments'][key]['simulate_params'].keys())
+        log_write(' [{0} : number of simulate params: {1}]'.format(key,num_of_simulate)) 
 
     if(test_mode):
         for key in json_data['experiments'].keys():
@@ -66,10 +74,12 @@ def operate_experiments(parameter_file=None, log_file=None, cout_tag=False,
             for key_t in json_data['experiments'][key].keys():
                 log_write(' [{0}]'.format(key_t))
                 for key_tt in json_data['experiments'][key][key_t].keys():
-                    log_write('   {0} : {1}'.format(key_tt, json_data['experiments'][key][key_t][key_tt]))
+                    parameter_value = json_data['experiments'][key][key_t][key_tt]
+                    log_write('   {0} : {1}'.format(key_tt, parameter_value))
 
     if(structured_output):
-        experiment_directory = os.path.join(json_data['experiment_dir'], stop_watch.start_time(format='%Y-%m-%d-%H-%M-%S') + '/')
+        date_and_time = stop_watch.start_time(format='%Y-%m-%d-%H-%M-%S')
+        experiment_directory = os.path.join(json_data['experiment_dir'], date_and_time + '/')
         log_write('[set result output directory : {}]'.format(experiment_directory))
         setting_manager.set_directory(experiment_directory)
     else:
@@ -319,214 +329,5 @@ def integer_filter(n):
         return n
 
 
-class CommandManager:
-    def __init__(self):
-        self._json_path = _commands_json_file()
-        if(os.path.exists(self._json_path)):
-            commands_json = open(self._json_path)
-            self.command_data = json.load(commands_json)
-            self.command_name_list = list(self.command_data.keys())
-        else:
-            self.command_data = {}
-            self.command_name_list= []
 
-    def command_list(self):
-        for i in range(len(self.command_name_list)):
-            command_name = self.command_name_list[i]
-            print('[{0}] command name : {1} '.format(i,command_name))
-            print('  {}'.format(self.command_data[command_name]))
-
-    def command(self,command_id):
-        if(isinstance(command_id,int)):
-            return self.command_data[self.command_name_list[command_id]]
-        elif(isinstance(command_id, str)):
-            return self.command_data[command_id]
-        else:
-            raise ValueError('input is string or int')
-
-    def add_command(self,command_dict):
-        for key in command_dict.keys():
-            if key in self.command_data.keys():
-                color_print('Error : command "{0}" is already registered'.format(key),'RED')
-            else:
-                print('add command "{0}"'.format(key))
-                print(command_dict)
-                self.command_data[key] = command_dict[key]
-                self.command_name_list = list(self.command_data.keys())
-
-    def remove_command(self,command_name):
-        if command_name in self.command_data.keys():
-            print('command {0} is removed'.format(command_name))
-            del self.command_data[command_name]
-            self.command_name_list = list(self.command_data.keys())
-        else:
-            color_print('Error : command {0} is not registered'.format(command_name),'RED')
-
-    def save(self):
-        print('save now defined commands')
-        f = open(self._json_path,'w')
-        json.dump(self.command_data,f,indent=4)
-        f.close()
-
-    def export(self):
-        current_directory = os.getcwd()
-        print('exprot commands.json in current directory')
-        f = open(os.path.join(current_directory,'commands.json'),'w')
-        json.dump(self.command_data,f,indent=4)
-        f.close()
-
-    def test_simulate(self,command_id,execute_part):
-        if(isinstance(command_id,int)):
-            command_name =  self.command_name_list[command_id]
-        elif(not command_id in self.command_name_list):
-            raise ValueError('not find {} in registered commands'.format(command_name))
-        else:
-            command_name = command_id
-        for key in execute_part:
-            if(not key in self.command_data[command_name]):
-                raise ValueError('{0} is not execute file part in {1}'.format(execute_part,command_name))
-        print('test simulate : {}'.format(command_name))
-        result_directory = './test/'
-        files_list = os.listdir('./test/')
-        print('result directory : {}'.format(result_directory))
-        log_file = 'log.dat'
-        print('log file name : {}'.format(log_file))
-        log_file = os.path.join(result_directory, log_file)
-        print('log file path : {}'.format(log_file))
-        log_write = LogManager(log_file=log_file,cout_tag=True)
-        setting_manager = SettingManager(log_write) 
-        setting_manager.set_directory(result_directory)
-        print('all parameters are set 1 unifromaly')
-        simulate_params = {}
-        for key in self.command_data[command_name]:
-            if(key == 'result_directory'):
-                simulate_params[key] = result_directory
-            elif(key in execute_part):
-                simulate_params[key] = key
-            else:
-                simulate_params[key] = '1'
-        execute_simulation(command_name,simulate_params,result_directory,log_write,self.command_data)
-        files_list_created = os.listdir('./test/')
-        for key in list(set(files_list_created) - set(files_list)):
-            os.remove(os.path.join('./test',key))
-        print('test simulate end')
-
-
-def log_check(target):
-    if os.path.exists(target) and not os.path.isdir(target):
-        print('[input log file : {}]'.format(target))
-        _log_check(target)
-    elif os.path.isdir(target):
-        top_directory = target
-        elements_list = os.listdir(top_directory)
-        for element in elements_list:
-            experiment_dir_list = []
-            date_dir_list = []
-            if 'experiment' in element and os.path.isdir(os.path.join(top_directory, element)):
-                experiment_dir_list.append(element)
-            if len(element.split('-')) > 5 and os.path.isdir(os.path.join(top_directory, element)):
-                date_dir_list.append(element)
-        print('[top directory : {}]'.format(top_directory))
-        if(len(experiment_dir_list) > 0):
-            print('[top directory is root of experiments : plot all log in experiments]')
-            plot_log(top_directory)
-        elif(len(date_dir_list) > 0):
-            print('[top directory is root of data]')
-            for target_directory in date_dir_list:
-                color_print('[{0}]'.format(target_directory),'GREEN')
-                plot_log(os.path.join(top_directory,target_directory))
-        else:
-          print('[Not root of results : all "log*.dat"]')
-          for element in elements_list:
-              if('log' in element):
-                    log_file_name = element
-                    color_print('[{0} : {1}]'.format(top_directory,log_file_name),'GREEN')
-                    log_file_path = os.path.join(top_directory,log_file_name)
-                    _log_check(log_file_path)
-        print('[complete print]')
-
-
-def _log_check(log_file_path):
-    log_file = open(log_file_path,'r')
-    whole_lines = log_file.readlines()
-    length_lines = len(whole_lines)
-    parameter_declare = [x for x in whole_lines if 'parameter file' in x]
-    parameter_declare = parameter_declare[0].split('\n')[0]
-    print(parameter_declare)
-    target_dir_list = [x for x in whole_lines if 'set result output directory' in x] 
-    if(len(target_dir_list) == 1):
-        target_directory = target_dir_list[0].split(' ')[-1].split(']')[0]
-        current_directory_path = os.getcwd()
-        target_directory = os.path.join(current_directory_path, target_directory)
-        if(os.path.isdir(target_directory)):
-            print('[result directory : {}]'.format(target_directory))
-            workstation = [x for x in whole_lines if 'server name' in x]
-            workstation = workstation[0].split('\n')[0]
-            print(workstation)
-            plot_log(target_directory)
-        else:
-            print('  [Error! {} des not exist]'.format(target_directory))
-    else:
-        print('[Error! {} has no expected form]'.format(log_file_path))
-
-
-def plot_log(target_directory):
-    json_file = open(os.path.join(target_directory,'parameter.json'),'r')
-    num_experiments = len(json.load(json_file)['experiments'])
-    print('[number of experiments : {}]'.format(num_experiments))
-    for i in range(num_experiments):
-        experiment_directory = os.path.join(target_directory,'experiment_' + str(i+1))
-        time_log_print(experiment_directory,n_indent=1)
-        if(os.path.exists(experiment_directory)):
-            ongoing_directories = sorted([x for x in os.listdir(experiment_directory) \
-                    if os.path.isdir(os.path.join(experiment_directory,x))])
-            for directory in ongoing_directories:
-                ongoing_directory = os.path.join(experiment_directory,directory)
-                time_log_print(ongoing_directory,n_indent=2)
-
-
-def time_log_print(directory_path,n_indent=1):
-    log_write = LogManager(n_indent=n_indent,cout_tag=True)
-    directory_name = os.path.basename(os.path.normpath(directory_path))
-    if(os.path.exists(directory_path)):
-        json_file = open(os.path.join(directory_path,'parameter.json'),'r')
-        json_data = json.load(json_file)
-        time_info = json_data['time_info']
-        sentence = ''
-        if('start_time' in time_info.keys() and len(time_info['start_time']) > 0):
-            start_time = time_info['start_time']
-        else:
-            start_time = 'wating'
-        if('end_time' in time_info.keys() and len(time_info['end_time']) > 0):
-            end_time = time_info['end_time']
-            duration_time = time_info['duration']
-            sentence = '[{0}] : [start {1}] : [end {2}] : [duration {3}] '.format(directory_name,start_time,end_time,duration_time)
-        else:
-            ongoing_number = len([x for x in os.listdir(directory_path) if os.path.isdir(os.path.join(directory_path,x))])
-            nowtime = datetime.datetime.now()
-            if(ongoing_number > 0):
-                simulate_params = json_data['simulate_params']
-                command_name = json_data['experiment_params']['command_name']
-                print_temp = lambda sentence : sentence
-                simulate_params, total_combinations = set_total_combinations(simulate_params,print_temp)
-                sentence = '[{0}] : [start {1}] : '.format(directory_name,start_time)\
-                         + '[now  number-{0} ({0}/{1})]'.format(ongoing_number,len(total_combinations))
-                sentence += '  [command_name : {0}] [number of simulations : {1}] '.format(command_name,max(len(total_combinations),1)) 
-                if(len(total_combinations) > 0):
-                    sentence += '[change params :'
-                    for key in simulate_params:
-                        if(isinstance(simulate_params[key],list)):
-                            sentence += ' ' +key + ','
-                    sentence += ']'
-            else:
-                diff_time = nowtime - datetime.datetime.strptime(start_time, '%Y/%m/%d %H:%M:%S')
-                sentence = '[{0}] : [start {1}] :'.format(directory_name,start_time)\
-                                + colors('RED') \
-                                + ' [past {}] '.format(str(diff_time))\
-                                + colors('END')
-        if('remark' in time_info.keys()):
-            sentence += colors('RED') + '[{}] '.format(time_info['remark']) + colors('END')
-        log_write(sentence)
-    else:
-        log_write('[{}] : [yet execute]'.format(directory_name))
 
