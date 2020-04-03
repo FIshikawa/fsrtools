@@ -12,9 +12,9 @@ from matplotlib import cm
 import matplotlib.pyplot as plt 
 import matplotlib.ticker as ptick
 from mpl_toolkits.mplot3d import axes3d
-from fsrtools.util import LogManager
-from fsrtools.util import colors
-from fsrtools.simulate_tools import set_total_combinations
+from fsrtools.utils import LogManager
+from fsrtools.utils import colors
+from fsrtools.utils import set_total_combinations
 
 class PlotManager:
     def __init__(self,top_directory=None,file=None):

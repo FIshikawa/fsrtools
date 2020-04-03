@@ -1,0 +1,8 @@
+###### Requirements without Version Specifiers ######`
+numpy 
+
+###### Requirements with Version Specifiers ######`
+scipy>=1.0
+matplotlib>=2.0
+pytest>=4.0
+ipython>=7.0.0
