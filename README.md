@@ -4,12 +4,16 @@
 
 "fsrtools" is management tools made by F.Ishikawa
 
-## Console tools
+## Features
+- Console tools
 The package has some console tools.
+    -  "fsrview" is a visualizer of experimetal results.
 
--  "fsrview" is a visualizer of experimetal results.
+    -  "fsrsimulate" is a simulator which is like wrapper.
 
--  "fsrsimulate" is a simulator which is like wrapper.
+## Requirements
+User python3.x (x=>6) and some packages.
+See requirements.txt and github actions.
 
 ## Installation
 It is recommended to use virtualenv and install this package into the environment.
@@ -23,10 +27,10 @@ $ source your_directory/bin/activate
 ```  
 
 ## Tutorial 
-## fsrsimulate
+### fsrsimulate
 In three steps, you can execute your programs with this manager.
 
-### First step : register your program in fsrsimulate.
+#### First step : register your program in fsrsimulate.
 First of all, you register your program in this manager.
 This manager build excutation codes reffering to its registered programs list.
 One of the console tools, "fsrsimulate", has "set_commands" mode.
@@ -69,7 +73,7 @@ The `N_loop` is a parameter that is the number of iterations.
 Final sentence, `fsrsimulate.save()`, save the registered commands.
 If you forget this, you cannot use the command.
 
-### Second step : Set json file of parameter.
+#### Second step : Set json file of parameter.
 Next, you create a json file that includes input parameter.
 An example is in the tutorial directory, whose name is `parameter_hello_world.json`.
 ```bash
@@ -97,7 +101,7 @@ An example is in the tutorial directory, whose name is `parameter_hello_world.js
 }
 ```
 
-### Final step : execute programs via json and manager.
+#### Final step : execute programs via json and manager.
 After that, you execute the program by fsrsimulate as follows.
 ```bash
 $ fsrsimulate -j parameter.json -lf log.dat --cout
@@ -106,14 +110,14 @@ You can ignore `--cout` option if you would not like to see the all process.
 The option allow standard output the log data.
 Same outputs are int the `log.dat`.
 
-#### Note 
+##### Note 
 A directory, `results`, is made in the current directory.
 It has a few of directories whose name are corresponds to the date.
 However, you cannot see any files in the directories.
 The reason is that the executed program, `hello_world.py`, does not create any files for result
 but only perform standard output.
 
-### Advanced : manage programs that create output files. 
+#### Advanced : manage programs that create output files. 
 In usual cases, it is necessary to make a lot of result files.
 An example, `create_data.py`, is in the tutorial directory.
 You register the program as the follwoing.
