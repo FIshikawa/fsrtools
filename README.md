@@ -2,21 +2,21 @@
 
 # fsrtools
 
-"fsrtools" is management tools made by F.Ishikawa
+"fsrtools" is a management tool package made by F.Ishikawa.
 
 ## Features
 - Console tools
-The package has some console tools.
+The package has two console tools.
     -  "fsrview" is a visualizer of experimetal results.
 
     -  "fsrsimulate" is a simulator which is like wrapper.
 
 ## Requirements
-User python3.x (x=>6) and some packages.
+This package requires python3.x (x > 5) and some packages.
 See requirements.txt and github actions.
 
 ## Installation
-It is recommended to use virtualenv and install this package into the environment.
+It is recommended to use virtualenv and install this package in the environment.
 
 ```bash
 $ python3 -m venv your_directory
@@ -28,13 +28,14 @@ $ source your_directory/bin/activate
 
 ## Tutorial 
 ### fsrsimulate
-In three steps, you can execute your programs with this manager.
+"fsrsimulate" is the console tool which enable you to execute your programs with simple parameter files.
+In three steps, you can execute your programs with this command.
 
 #### First step : register your program in fsrsimulate.
-First of all, you register your program in this manager.
-This manager build excutation codes reffering to its registered programs list.
-One of the console tools, "fsrsimulate", has "set_commands" mode.
-If you perform the mode, you can see the registration console as the follows.
+First of all, you register your programs in this manager.
+This manager builds excutation codes reffering to the list included in the package directory.
+"fsrsimulate" has "set_commands" mode which provides an interactive shell to register the programs.
+If you open the mode, you can see the registration console as the follows.
 ```bash
 $ fsrsimulate --set_commnads
 
