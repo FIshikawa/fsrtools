@@ -1,6 +1,7 @@
 import os
+import datetime
 import json
-from fsrtools.utils import LogManager
+from fsrtools.utils import *
 from fsrtools.utils.colors import *
 
 def log_check(target):
@@ -124,9 +125,9 @@ def time_log_print(directory_path,n_indent=1):
                         set_total_combinations(simulate_params,print_temp)
                 sentence = '[{0}] : [start {1}] : ' \
                                 .format(directory_name,start_time)\
-                         + '[now  number-{0} ({0}/{1})] \
-                            '.format(ongoing_number,len(total_combinations))
-                sentence += \
+                         + '[now  number-{0} ({0}/{1})]'\
+                            .format(ongoing_number,len(total_combinations))
+                sentence += '' \
                   '  [command_name : {0}] [number of simulations : {1}] ' \
                        .format(command_name,max(len(total_combinations),1)) 
 
