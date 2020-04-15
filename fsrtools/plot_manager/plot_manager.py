@@ -209,11 +209,12 @@ class PlotManager:
         else:
             raise KeyError('no input file name')
         if(not file_path in self._buffer_data.keys()):
-            data, type_dict, plot_type = self._data_load(file_path,plot_type,silent=silent)
+            data, type_dict, plot_type = \
+                            self._data_load(file_path,plot_type,silent=silent)
         else:
-            data      = copy.deepcopy(self._buffer_data[file_path]['data'])
-            type_dict = copy.deepcopy(self._buffer_data[file_path]['type_dict'])
-            plot_type = copy.deepcopy(self._buffer_data[file_path]['plot_type'])
+            data      =copy.deepcopy(self._buffer_data[file_path]['data'])
+            type_dict =copy.deepcopy(self._buffer_data[file_path]['type_dict'])
+            plot_type =copy.deepcopy(self._buffer_data[file_path]['plot_type'])
         if(not silent):
             self._myprint('[data type list]')
             self._myprint.add_indent()
@@ -227,14 +228,18 @@ class PlotManager:
         time_data = {}
         parameter_data = {}
         for i, result_data in enumerate(self._result_data_map):
-            if('duration' in result_data['time_info'] and not 'remark' in result_data['time_info']):
+            if('duration' in result_data['time_info'] and 
+                                    not 'remark' in result_data['time_info']):
                 time_data[i] = result_data['time_info']['duration']
                 parameter_data[i] = result_data['variable_parameters']
             else:
-                print('[{}-th result is failed simulation : no time result]'.format(i))
+                print('[{}-th result is failed simulation : no time result]'
+                        .format(i))
         return parameter_data, time_data
 
-    def plot_result(self,file=None,directory=None,plot_type=None,plot_value=None,save_fig=False,N_plot=None,log_scale=False,label=None,label_position=None,silent=False):
+    def plot_result(self,file=None,directory=None,plot_type=None,
+                    plot_value=None,save_fig=False,N_plot=None,log_scale=False,
+                    label=None,label_position=None,silent=False):
         if(silent):
             self._myprint = LogManager(silent=silent)
         else:
@@ -249,13 +254,19 @@ class PlotManager:
                     for directory_each in directory:
                         file_path = self._file_path_set(file,directory_each)
                         if(not os.path.exists(file_path)):
-                            raise NameError('{} does not exist'.format(file_path)) 
-                        directory_name = self._directory_name_set(file_path=file_path)
+                            raise NameError('{} does not exist'
+                                                .format(file_path)) 
+                        directory_name = \
+                                self._directory_name_set(file_path=file_path)
                         json_data = self._check_json_file(directory_name)
                         if(json_data is None and plot_type is None):
                             raise KeyError('must select plot_type')
                         else:
-                            self._plot_file(file_path,directory_each,json_data,plot_type=plot_type,plot_value=plot_value,log_scale=log_scale,label=label,N_plot=N_plot)  
+                            self._plot_file(file_path,directory_each,json_data,
+                                            plot_type=plot_type,
+                                            plot_value=plot_value,
+                                            log_scale=log_scale,
+                                            label=label,N_plot=N_plot)  
                             if(label_position is not None):
                                 for plot_type_temp in self.ax.keys():
                                     for plot_value_temp in self.ax[plot_type_temp].keys():
@@ -445,7 +456,9 @@ class PlotManager:
                 self._myprint('[normal plot data]')
                 plot_type = 'normal'
 
-        data_raw = np.loadtxt(file_path, dtype = np.float64,skiprows=1)
+        data_raw = np.loadtxt(file_path, dtype=np.float64,skiprows=1)
+        if len(data_raw.shape) < 2:
+            data_raw = data_raw.reshape(1,-1)
         data_file = open(file_path,'r')
 
         if(plot_type == 'normal'):
