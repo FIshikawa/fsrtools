@@ -5,8 +5,11 @@
 "fsrtools" is a management tool package.
 
 ## Features
+
 - Console tools
-The package has two console tools.
+
+    The package has two console tools.
+
     -  "fsrview" is a visualizer of experimetal results.
 
     -  "fsrsimulate" is a simulator which is like wrapper.
