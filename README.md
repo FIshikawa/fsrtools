@@ -124,7 +124,7 @@ and the output is like
 [result directory : /your_executing_path/results/2020-04-15-22-10-42]
 [server name : your_host_name]
 [number of experiments : 1]
-  [experiment_1] : [start 2020/04/15 22:10:42] : [now  number-7 (7/8)]  [command_name : hell_world] [number of simulations : 2] [change params : N_loop,]
+  [experiment_1] : [start 2020/04/15 22:10:42] : [now  number-7 (7/8)]  [command_name : hell_world] [number of simulations : 8] [change params : N_loop,]
     [number-1] : [start 2020/04/15 22:10:42] : [end 2020/04/16 01:04:07] : [duration 2:53:24.759144] 
     [number-2] : [start 2020/04/16 01:04:07] : [end 2020/04/16 04:35:54] : [duration 3:31:46.912979] 
     [number-3] : [start 2020/04/16 04:35:54] : [end 2020/04/16 07:47:13] : [duration 3:11:19.212305] 
