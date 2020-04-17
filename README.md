@@ -113,6 +113,26 @@ $ fsrsimulate -j parameter.json -lf log.dat --cout
 You can ignore `--cout` option if you would not like to see the all process.
 The option allow standard output the log data.
 Same outputs are int the `log.dat`.
+You can also check the progress of simulations via the following command.
+```bash
+$ fsrsimulate --log log.dat
+```
+and the output is like
+```bash
+[input log file : log.dat]
+[parameter file : parameters.json]
+[result directory : /your_executing_path/results/2020-04-15-22-10-42]
+[server name : your_host_name]
+[number of experiments : 1]
+  [experiment_1] : [start 2020/04/15 22:10:42] : [now  number-7 (7/8)]  [command_name : hell_world] [number of simulations : 2] [change params : N_loop,]
+    [number-1] : [start 2020/04/15 22:10:42] : [end 2020/04/16 01:04:07] : [duration 2:53:24.759144] 
+    [number-2] : [start 2020/04/16 01:04:07] : [end 2020/04/16 04:35:54] : [duration 3:31:46.912979] 
+    [number-3] : [start 2020/04/16 04:35:54] : [end 2020/04/16 07:47:13] : [duration 3:11:19.212305] 
+    [number-4] : [start 2020/04/16 07:47:13] : [end 2020/04/16 11:48:33] : [duration 4:01:20.085181] 
+    [number-5] : [start 2020/04/16 11:48:33] : [end 2020/04/16 14:59:51] : [duration 3:11:17.353289] 
+    [number-6] : [start 2020/04/16 14:59:51] : [end 2020/04/16 18:57:42] : [duration 3:57:51.612033] 
+    [number-7] : [start 2020/04/16 18:57:42] : [past 20:18:30.540169] 
+```
 
 ##### Note 
 A directory, `results`, is made in the current directory.
