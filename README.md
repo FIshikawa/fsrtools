@@ -2,7 +2,7 @@
 
 # fsrtools
 
-"fsrtools" is a management tool package made by F.Ishikawa.
+"fsrtools" is a management tool package.
 
 ## Features
 - Console tools
