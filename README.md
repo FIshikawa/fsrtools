@@ -54,7 +54,7 @@ IPython 7.13.0 -- An enhanced Interactive Python. Type '?' for help.
 In [1]:  
 ```  
 You can resistor your program though the interactive console by IPython.
-Here, one example is showed by using a simple python code, "hello_world.py", in the tutorial directory.
+Here, one example is shown with using a simple python code, "hello_world.py", in the tutorial directory.
 This code accepts an argument on the console like, 
 ```bash
 $ python hell_world.py 2
@@ -70,15 +70,15 @@ add command "hello_world"
 In [3]: fsrsimulate.save()                                                      
 save now defined commands
 ```
-As you can see, the input form is a directory class of python.
+As you can see, the input form is a dictionary class of python.
 The key, "hello_world", is the name of the command.
-The list, `['python','hello_world.py','N_loop']`, is a list corresponding to executed code on console.
+The list, `['python','hello_world.py','N_loop']`, is a list corresponding to the code executed on your console.
 The `N_loop` is a parameter that is the number of iterations.
-Final sentence, `fsrsimulate.save()`, save the registered commands.
-If you forget this, you cannot use the command.
+Final sentence, `fsrsimulate.save()`, saves the registered command.
+If you forget this, you cannot use the command because the console tool does not know it.
 
 #### Second step : Set json file of parameter.
-Next, you create a json file that includes input parameter.
+Next, you create a json file including the input parameters.
 An example is in the tutorial directory, whose name is `parameter_hello_world.json`.
 ```bash
 {
@@ -105,14 +105,14 @@ An example is in the tutorial directory, whose name is `parameter_hello_world.js
 }
 ```
 
-#### Final step : execute programs via json and manager.
-After that, you execute the program by fsrsimulate as follows.
+#### Final step : execute programs via manager with json file.
+After that, you execute the program via `fsrsimulate` as follows.
 ```bash
 $ fsrsimulate -j parameter.json -lf log.dat --cout
 ```
-You can ignore `--cout` option if you would not like to see the all process.
-The option allow standard output the log data.
-Same outputs are int the `log.dat`.
+You can ignore `--cout` option if you would not like to see the all process explicitly.
+The option allows standard output of the log.
+Same outputs are written in the `log.dat`.
 You can also check the progress of simulations via the following command.
 ```bash
 $ fsrsimulate --log log.dat
