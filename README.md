@@ -2,7 +2,7 @@
 
 # fsrtools
 
-"fsrtools" is a management tool package.
+"Fast simulating and Recording tools (fsrtools)" is a package managing numerical simulations.
 
 ## Features
 
