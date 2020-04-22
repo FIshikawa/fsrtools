@@ -11,9 +11,9 @@ def log_check(target):
     elif os.path.isdir(target):
         top_directory = target
         elements_list = os.listdir(top_directory)
+        date_dir_list = []
+        experiment_dir_list = []
         for element in elements_list:
-            experiment_dir_list = []
-            date_dir_list = []
             if 'experiment' in element and \
                         os.path.isdir(os.path.join(top_directory, element)):
                 experiment_dir_list.append(element)
