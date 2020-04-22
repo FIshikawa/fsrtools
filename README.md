@@ -113,11 +113,11 @@ $ fsrsimulate -j parameter.json -lf log.dat --cout
 You can ignore `--cout` option if you would not like to see the all process explicitly.
 The option allows standard output of the log.
 Same outputs are written in the `log.dat`.
-You can also check the progress of simulations via the following command.
+You can also check the progress of simulations via the following command at a glance.
 ```bash
 $ fsrsimulate --log log.dat
 ```
-and the output is like
+and the output is 
 ```bash
 [input log file : log.dat]
 [parameter file : parameters.json]
