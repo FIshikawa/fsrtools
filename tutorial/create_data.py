@@ -61,7 +61,8 @@ if __name__ == '__main__':
         gaussian_pdf[i] = norm.pdf(x_data,loc=0.0,scale=1.0 / N_y * (i+1)) * 5
     for i in range(N_x):
         for j in range(N_y):
-            result_hist.write('{:e} {:e} '.format(gaussian_pdf[j][i],x_data[i]))
+            result_hist.write('{:e} {:e} '
+                                .format(gaussian_pdf[j][i],x_data[i]))
         result_hist.write('\n')
     result_hist.close()
 

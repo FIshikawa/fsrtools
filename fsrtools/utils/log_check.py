@@ -1,6 +1,7 @@
 import os
+import datetime
 import json
-from fsrtools.utils import LogManager
+from fsrtools.utils import *
 from fsrtools.utils.colors import *
 
 def log_check(target):
@@ -10,9 +11,9 @@ def log_check(target):
     elif os.path.isdir(target):
         top_directory = target
         elements_list = os.listdir(top_directory)
+        date_dir_list = []
+        experiment_dir_list = []
         for element in elements_list:
-            experiment_dir_list = []
-            date_dir_list = []
             if 'experiment' in element and \
                         os.path.isdir(os.path.join(top_directory, element)):
                 experiment_dir_list.append(element)
@@ -86,7 +87,7 @@ def plot_log(target_directory):
             for directory in ongoing_directories:
                 ongoing_directory = \
                             os.path.join(experiment_directory,directory)
-                time_log_print(ongoing_directory,n_indent=2)
+                time_log_print(ongoing_directory,n_indent=3)
 
 
 def time_log_print(directory_path,n_indent=1):
@@ -97,59 +98,77 @@ def time_log_print(directory_path,n_indent=1):
         json_data = json.load(json_file)
         time_info = json_data['time_info']
         sentence = ''
+        ongoing_number = \
+                 len([x for x in os.listdir(directory_path) \
+                      if 'number' in x and \
+                            os.path.isdir(os.path.join(directory_path,x))])
+
         if 'start_time' in time_info.keys() and \
                                     len(time_info['start_time']) > 0:
             start_time = time_info['start_time']
         else:
             start_time = 'wating'
+
         if 'end_time' in time_info.keys() and \
                                     len(time_info['end_time']) > 0:
 
             end_time = time_info['end_time']
             duration_time = time_info['duration']
-            sentence = '[{0}] : [start {1}] : [end {2}] : [duration {3}] ' \
-                  .format(directory_name,start_time,end_time,duration_time)
         else:
-            ongoing_number = \
-                     len([x for x in os.listdir(directory_path) \
-                          if os.path.isdir(os.path.join(directory_path,x))])
             nowtime = datetime.datetime.now()
+            duration_time =  nowtime \
+                               - datetime.datetime.strptime(start_time, 
+                                                            '%Y/%m/%d %H:%M:%S')
+            end_time = None
 
-            if ongoing_number:
-                simulate_params = json_data['simulate_params']
-                command_name = \
-                            json_data['experiment_params']['command_name']
-                print_temp = lambda sentence : sentence
-                simulate_params, total_combinations = \
-                        set_total_combinations(simulate_params,print_temp)
-                sentence = '[{0}] : [start {1}] : ' \
-                                .format(directory_name,start_time)\
-                         + '[now  number-{0} ({0}/{1})] \
-                            '.format(ongoing_number,len(total_combinations))
-                sentence += \
-                  '  [command_name : {0}] [number of simulations : {1}] ' \
-                       .format(command_name,max(len(total_combinations),1)) 
+        if ongoing_number:
+            simulate_params = json_data['simulate_params']
+            command_name = \
+                        json_data['experiment_params']['command_name']
+            print_temp = lambda sentence : sentence
+            simulate_params, total_combinations = \
+                    set_total_combinations(simulate_params,print_temp)
 
-                if len(total_combinations):
-                    sentence += '[change params :'
-                    for key in simulate_params:
-                        if isinstance(simulate_params[key],list):
-                            sentence += ' ' +key + ','
-                    sentence += ']'
+            if end_time is None:
+                sentence = '[{0}] : [start {1}] : [past {2}] : ' \
+                                .format(directory_name,start_time,duration_time)
+                sentence += '[ongoing  number-{0} ({0}/{1})]'\
+                            .format(ongoing_number,len(total_combinations))
             else:
-                diff_time = \
-                    nowtime - \
-                        datetime.datetime.strptime(start_time, 
-                                                    '%Y/%m/%d %H:%M:%S')
+                sentence = '[{0}] : [start {1}] : [end {2}] : [duration {3}]'\
+                      .format(directory_name,start_time,end_time,duration_time)
+                sentence += ' : [completed ({0}/{1})]'\
+                            .format(ongoing_number,len(total_combinations))
+            log_write(sentence)
+
+            sentence = '  [command_name : {0}] ' \
+                   .format(command_name,max(len(total_combinations),1)) 
+
+            if len(total_combinations):
+                sentence += '[change params :'
+                for key in simulate_params:
+                    if isinstance(simulate_params[key],list):
+                        sentence += ' ' +key + ','
+                sentence += ']'
+
+            log_write(sentence)
+
+        else:
+            if end_time is not None:
+                sentence = '[{0}] : [start {1}] : [end {2}] : [duration {3}] '\
+                      .format(directory_name,start_time,end_time,duration_time)
+            else:
                 sentence = '[{0}] : [start {1}] :' \
                                 .format(directory_name,start_time) \
                                 + colors('RED') \
-                                + ' [past {}] '.format(str(diff_time))\
+                                + ' [past {}] '.format(str(duration_time))\
                                 + colors('END')
-        if 'remark' in time_info.keys():
-            sentence += colors('RED') + '[{}] ' \
+
+            if 'remark' in time_info.keys():
+                sentence += colors('RED') + '[{}] ' \
                                 .format(time_info['remark']) + colors('END')
-        log_write(sentence)
+
+            log_write(sentence)
     else:
         log_write('[{}] : [yet execute]'.format(directory_name))
 

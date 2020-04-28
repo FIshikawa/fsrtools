@@ -16,8 +16,10 @@ def set_data_for_test():
         command_manager.remove_command('hello_world')
     if('create_data' in command_manager.command_name_list):
         command_manager.remove_command('create_data')
-    command_manager.add_command({'hello_world' : ['python','./test/hello_world.py','N_loop']})
-    command_manager.add_command({'create_data' : ['python','./test/create_data.py','result_directory','N_x','N_y']})
+    command_manager.add_command({'hello_world' : 
+                                ['python','./test/hello_world.py','N_loop']})
+    command_manager.add_command({'create_data' : 
+            ['python','./test/create_data.py','result_directory','N_x','N_y']})
     command_manager.save()
     log_file = 'test/log.dat'
     parameter_json = 'test/parameter_test.json'

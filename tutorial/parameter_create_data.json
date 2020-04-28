@@ -1,13 +1,14 @@
 { 
   "experiment_dir":"results_data/",
+  "experiments":{
     "experiment_1":{
       "experiment_params":{
         "command_name":"create_data"
-        },
+      },
       "simulate_params":{
-        "N_x":[8,10],
+        "N_x":[1024,1280,1536],
         "N_y":"N_x * 2"
-        }
+      }
     }
   }
 }

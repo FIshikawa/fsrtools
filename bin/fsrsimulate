@@ -35,15 +35,14 @@ def main():
 
     args = vars(parser.parse_args())
     if(args['set_commands']):
-        print('set commands mode')
-        fsrsimulate = CommandManager()
-        fsrsimulate.command_list()
         itembed = InteractiveShellEmbed()
-        color_print('[Interactive Shell Mode]','GREEN')
+        color_print('[Command Manager : Interactive Shell Mode]','GREEN')
         color_print('[ATTENTION]','GREEN')
-        print(' [All configuration should be set by "fsrsimulate"]')
-        print(' [You can see help by "fsrsimilate.help()"]')
+        print(' [All configuration should be set via "fsrsimulate"]')
+        print(' [You can see help by "help(fsrsimilate)"]')
         color_print('[Start IPython]','GREEN')
+        fsrsimulate = CommandManager()
+        fsrsimulate.view_command_list()
         itembed()
         color_print('[End Interactive Shell]','GREEN')
     elif(args['log'] != None):
