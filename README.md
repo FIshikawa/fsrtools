@@ -42,11 +42,13 @@ If you open the mode, you can see the registration console as the follows.
 ```bash
 $ fsrsimulate --set_commnads
 
-[Interactive Shell Mode]
+[Command Manager : Interactive Shell Mode]
 [ATTENTION]
- [All configuration should be set by "fsrsimulate"]
- [You can see help by "fsrsimilate.help()"]
+ [All configuration should be set via "fsrsimulate"]
+ [You can see help by "help(fsrsimilate)"]
 [Start IPython]
+[Registered commands]
+ print as " [number] : name ".
 Python 3.7.3 (default, Dec 13 2019, 19:58:14) 
 Type 'copyright', 'credits' or 'license' for more information
 IPython 7.13.0 -- An enhanced Interactive Python. Type '?' for help.
@@ -76,6 +78,35 @@ The list, `['python','hello_world.py','N_loop']`, is a list corresponding to the
 The `N_loop` is a parameter that is the number of iterations.
 Final sentence, `fsrsimulate.save()`, saves the registered command.
 If you forget this, you cannot use the command because the console tool does not know it.
+After registration and reopen the mode, you see the follows.
+```bash
+$ fsrsimulate --set_commnads
+
+[Command Manager : Interactive Shell Mode]
+[ATTENTION]
+ [All configuration should be set via "fsrsimulate"]
+ [You can see help by "help(fsrsimilate)"]
+[Start IPython]
+[Registered commands]
+ print as " [number] : name ".
+  [0] : hello_world 
+Python 3.7.3 (default, Dec 13 2019, 19:58:14) 
+Type 'copyright', 'credits' or 'license' for more information
+IPython 7.13.0 -- An enhanced Interactive Python. Type '?' for help.
+
+In [1]:  
+```
+By using `fsrsimulate.view_command(command_id)`, you see the executable code of the command like,
+```bash
+In [1]: fsrsimulate.view_command(command_id=0)                                                                                                                           
+command name : hello_world
+  ['python', 'hello_world.py', 'N_loop']
+
+In [2]: fsrsimulate.view_command(command_id='hello_world')                                                                                                               
+command name : hello_world
+  ['python', 'hello_world.py', 'N_loop']
+```
+You can also remove the registered command with `fsrsimulate.remove_command(commmand_name=you_want_to_remove)`.
 
 #### Second step : Set json file of parameter.
 Next, you create a json file including the input parameters.
@@ -115,6 +146,7 @@ The option allows standard output of the log.
 Same outputs are written in the `log.dat`.
 You can also check the progress of simulations executed in backgraound via the following command at a glance.
 ```bash
+$ fsrsimulate -j parameter.json -lf log.dat &
 $ fsrsimulate --log log.dat
 ```
 
