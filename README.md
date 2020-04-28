@@ -113,25 +113,9 @@ $ fsrsimulate -j parameter.json -lf log.dat --cout
 You can ignore `--cout` option if you would not like to see the all process explicitly.
 The option allows standard output of the log.
 Same outputs are written in the `log.dat`.
-You can also check the progress of simulations via the following command at a glance.
+You can also check the progress of simulations executed in backgraound via the following command at a glance.
 ```bash
 $ fsrsimulate --log log.dat
-```
-and the output is 
-```bash
-[input log file : log.dat]
-[parameter file : parameters.json]
-[result directory : /your_executing_path/results/2020-04-15-22-10-42]
-[server name : your_host_name]
-[number of experiments : 1]
-  [experiment_1] : [start 2020/04/15 22:10:42] : [now  number-7 (7/8)]  [command_name : hell_world] [number of simulations : 8] [change params : N_loop,]
-    [number-1] : [start 2020/04/15 22:10:42] : [end 2020/04/16 01:04:07] : [duration 2:53:24.759144] 
-    [number-2] : [start 2020/04/16 01:04:07] : [end 2020/04/16 04:35:54] : [duration 3:31:46.912979] 
-    [number-3] : [start 2020/04/16 04:35:54] : [end 2020/04/16 07:47:13] : [duration 3:11:19.212305] 
-    [number-4] : [start 2020/04/16 07:47:13] : [end 2020/04/16 11:48:33] : [duration 4:01:20.085181] 
-    [number-5] : [start 2020/04/16 11:48:33] : [end 2020/04/16 14:59:51] : [duration 3:11:17.353289] 
-    [number-6] : [start 2020/04/16 14:59:51] : [end 2020/04/16 18:57:42] : [duration 3:57:51.612033] 
-    [number-7] : [start 2020/04/16 18:57:42] : [past 20:18:30.540169] 
 ```
 
 ##### Note 
@@ -154,20 +138,32 @@ The `result_directory` parameter is the directory including result files finally
 The parameter file is like,
 
 ```bash
-{
+{ 
   "experiment_dir":"results_data/",
+  "experiments":{
     "experiment_1":{
       "experiment_params":{
         "command_name":"create_data"
-        },
+      },
       "simulate_params":{
-        "N_x":[8,10],
+        "N_x":[1024,1280,1536],
         "N_y":"N_x * 2"
-        }
+      }
     }
   }
 }
 ```
 In this case, the result files are output in the `results_data` directory.
-
-
+If you perform the program with background executation, you can check the progress with `--log` mode like,
+```bash
+[input log file : log.dat]
+[parameter file : parameter_create_data.json]
+[result directory : your_exected_directory/results_data/2020-04-28-11-28-13]
+[server name : your_host]
+[number of experiments : 1]
+  [experiment_1] : [start 2020/04/28 11:34:49] : [past 0:00:45.241581] : [ongoing  number-3 (3/3)]
+    [command_name : create_data] [change params : N_x,]
+      [number-1] : [start 2020/04/28 11:34:49] : [end 2020/04/28 11:35:06] : [duration 0:00:17.123402] 
+      [number-2] : [start 2020/04/28 11:35:06] : [end 2020/04/28 11:35:33] : [duration 0:00:27.282645] 
+      [number-3] : [start 2020/04/28 11:35:33] : [past 0:00:01.246004] 
+```
