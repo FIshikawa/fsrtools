@@ -74,10 +74,12 @@ def test_CommandManager():
     if('hello_world' in command_manager.command_name_list):
         print('hello_world is already set : remove for initialization ')
         command_manager.remove_command('hello_world')
-    command_manager.add_command({'hello_world' : ['python','./test/hello_world.py','N_loop']})
+    command_manager.add_command({'hello_world' : 
+                                ['python','./test/hello_world.py','N_loop']})
     command_manager.save()
-    command_manager.command_list()
-    command_manager.test_simulate('hello_world',['python','./test/hello_world.py'])
+    command_manager.view_command_list()
+    command_manager.test_simulate('hello_world',
+                                  ['python','./test/hello_world.py'])
     files_list_created = os.listdir('./test/')
     for key in list(set(files_list_created) - set(files_list)):
         os.remove(os.path.join('./test',key))
