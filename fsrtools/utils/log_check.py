@@ -115,9 +115,11 @@ def time_log_print(directory_path,n_indent=1):
             end_time = time_info['end_time']
             duration_time = time_info['duration']
         else:
+            nowtime = datetime.datetime.now()
+            duration_time =  nowtime \
+                               - datetime.datetime.strptime(start_time, 
+                                                            '%Y/%m/%d %H:%M:%S')
             end_time = None
-            duration_time = None
-
 
         if ongoing_number:
             simulate_params = json_data['simulate_params']
@@ -128,8 +130,8 @@ def time_log_print(directory_path,n_indent=1):
                     set_total_combinations(simulate_params,print_temp)
 
             if end_time is None:
-                sentence = '[{0}] : [start {1}] : ' \
-                                .format(directory_name,start_time)
+                sentence = '[{0}] : [start {1}] : [past {2}] : ' \
+                                .format(directory_name,start_time,duration_time)
                 sentence += '[ongoing  number-{0} ({0}/{1})]'\
                             .format(ongoing_number,len(total_combinations))
             else:
@@ -156,15 +158,10 @@ def time_log_print(directory_path,n_indent=1):
                 sentence = '[{0}] : [start {1}] : [end {2}] : [duration {3}] '\
                       .format(directory_name,start_time,end_time,duration_time)
             else:
-                nowtime = datetime.datetime.now()
-                diff_time = \
-                    nowtime - \
-                        datetime.datetime.strptime(start_time, 
-                                                    '%Y/%m/%d %H:%M:%S')
                 sentence = '[{0}] : [start {1}] :' \
                                 .format(directory_name,start_time) \
                                 + colors('RED') \
-                                + ' [past {}] '.format(str(diff_time))\
+                                + ' [past {}] '.format(str(duration_time))\
                                 + colors('END')
 
             if 'remark' in time_info.keys():

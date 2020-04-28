@@ -11,7 +11,8 @@ from fsrtools.simulation_tools._manager_utils import set_simulate_params
 from fsrtools.simulation_tools._manager_utils import integer_filter
 
 class SimulationManager:
-    """Simulation manager class. It manage executing simulations with the parameter file formed jason.
+    """Simulation manager class. 
+        It manage executing simulations with the parameter file formed jason.
 
     Args:
         parameter_file (string) : Path to the paramter file (json).
