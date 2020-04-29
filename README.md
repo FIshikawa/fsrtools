@@ -33,6 +33,9 @@ $ source your_directory/bin/activate
 "fsrsimulate" is the console tool which enable you to execute your programs with simple parameter files.
 In three steps, you can execute your programs with this command.
 
+##### Note 
+All programs you want to execute should be able to obtain the parameters via the argument.
+
 #### First step : register your program in fsrsimulate.
 First of all, you register your programs in this manager.
 This manager builds excutation codes reffering to the list included in the package directory.
