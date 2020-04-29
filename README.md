@@ -152,15 +152,14 @@ $ fsrsimulate -j parameter.json -lf log.dat &
 $ fsrsimulate --log log.dat
 ```
 
-##### Note 
+##### Note :  
 A directory, `results`, is made in the current directory.
-It has a few of directories whose name are corresponds to the date.
+It has a few of directories whose name correspond to the date.
 However, you cannot see any files in the directories.
-The reason is that the executed program, `hello_world.py`, does not create any files for result
-but only perform standard output.
+The reason is that the executed program, `hello_world.py`, does not create any files but performs only standard output.
 
 #### Advanced : manage programs that create output files. 
-In usual cases, it is necessary to make a lot of result files.
+In usual cases, it is necessary to make some result files.
 An example, `create_data.py`, is in the tutorial directory.
 You register the program as the follwoing.
 
