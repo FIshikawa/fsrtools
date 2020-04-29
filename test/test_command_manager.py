@@ -79,7 +79,7 @@ def test_CommandManager():
     command_manager.save()
     command_manager.view_command_list()
     command_manager.test_simulate('hello_world',
-                                    ['python','./test/hello_world.py'])
+                                  ['python','./test/hello_world.py'])
     files_list_created = os.listdir('./test/')
     for key in list(set(files_list_created) - set(files_list)):
         os.remove(os.path.join('./test',key))
