@@ -117,8 +117,8 @@ def time_log_print(directory_path,n_indent=1):
         else:
             nowtime = datetime.datetime.now()
             duration_time =  nowtime \
-                               - datetime.datetime.strptime(start_time, 
-                                                            '%Y/%m/%d %H:%M:%S')
+                              - datetime.datetime.strptime(start_time, 
+                                                        '%Y/%m/%d %H:%M:%S')
             end_time = None
 
         if ongoing_number:
@@ -131,7 +131,7 @@ def time_log_print(directory_path,n_indent=1):
 
             if end_time is None:
                 sentence = '[{0}] : [start {1}] : [past {2}] : ' \
-                                .format(directory_name,start_time,duration_time)
+                               .format(directory_name,start_time,duration_time)
                 sentence += '[ongoing  number-{0} ({0}/{1})]'\
                             .format(ongoing_number,len(total_combinations))
             else:
