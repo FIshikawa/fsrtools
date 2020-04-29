@@ -16,7 +16,7 @@
 
 ## Requirements
 This package requires python3.x (x > 5) and some packages.
-See requirements.txt and github actions.
+See setup.cfg and github actions.
 
 ## Installation
 It is recommended to use virtualenv and install this package in the environment.
@@ -24,7 +24,6 @@ It is recommended to use virtualenv and install this package in the environment.
 ```bash
 $ python3 -m venv your_directory
 $ source your_directory/bin/activate
-$ pip install -r requirements.txt
 $ pip install -e fsrtools
 $ source your_directory/bin/activate
 ```  
