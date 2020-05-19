@@ -21,7 +21,7 @@ def set_execute_command(command_name,simulate_params,logger,command_data):
     return execute_command
 
 
-def set_simulate_params(simulate_params,combination):
+def set_simulate_params(simulate_params,combination,logger):
     for key in combination.keys():
         simulate_params[key] = combination[key]
     simulate_params_temp = simulate_params.copy()
@@ -36,7 +36,7 @@ def set_simulate_params(simulate_params,combination):
                 calculated_value  = \
                     eval(simulate_params[key],globals(),local_variable_dict)
                 simulate_params_temp[key] = integer_filter(calculated_value)
-            except NameError as err:
+            except (NameError, SyntaxError) as err:
                 simulate_params_temp[key] = simulate_params[key]
 
     return simulate_params_temp

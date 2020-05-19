@@ -25,8 +25,8 @@ class LogManager:
 
     def __init__(self,n_indent=0,log_file=None,cout_tag=False,silent=False):
         if cout_tag is False and log_file is None and silent is False:
-            raise ValueError('log_file is defined nesessarily 
-                                when cout_tag is False.')
+            raise ValueError('log_file is defined nesessarily' \
+                              'when cout_tag is False.')
         if log_file is not None:
             if os.path.exists(log_file):
                 os.remove(log_file)

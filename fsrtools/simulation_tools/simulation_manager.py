@@ -201,7 +201,8 @@ class SimulationManager:
             if num_total_combinations:
                 simulate_params = \
                 set_simulate_params(simulate_params_original, 
-                                    total_combinations[i])
+                                    total_combinations[i],
+                                    logger)
             else:
                 simulate_params = simulate_params_original 
             self.logger('[simulation : number-{}]'.format(simulate_number))
