@@ -10,14 +10,15 @@ def log_check(target):
         _log_check(target)
     elif os.path.isdir(target):
         top_directory = target
-        elements_list = os.listdir(top_directory)
+        elements_paths = [os.path.join(top_directory, x) \
+                                for x in os.listdir(top_directory)]
+        elements_paths.sort(key=os.path.getmtime)
         date_dir_list = []
         experiment_dir_list = []
-        for element in elements_list:
-            if 'experiment' in element and \
-                        os.path.isdir(os.path.join(top_directory, element)):
+        for element_path in elements_paths:
+            element = os.path.basename(element_path)
+            if 'experiment' in element and os.path.isdir(element_path):
                 experiment_dir_list.append(element)
-
             if len(element.split('-')) > 5 and \
                         os.path.isdir(os.path.join(top_directory, element)):
                 date_dir_list.append(element)
@@ -32,15 +33,15 @@ def log_check(target):
                 color_print('[{0}]'.format(target_directory),'GREEN')
                 plot_log(os.path.join(top_directory,target_directory))
         else:
-          print('[Not root of results : all "log*.dat"]')
-          for element in elements_list:
-              if 'log' in element and 'dat' in element:
-                    log_file_name = element
-                    color_print('[{0} : {1}]'
-                            .format(top_directory,log_file_name),'GREEN')
-                    log_file_path = \
-                                os.path.join(top_directory,log_file_name)
-                    _log_check(log_file_path)
+            print('[Not root of results : all "log*.dat"]')
+            for element_path in elements_paths:
+                element = os.path.basename(element_path)
+                if 'log' in element and 'dat' in element:
+                      log_file_name = element
+                      color_print('[{0} : {1}]'
+                              .format(top_directory,log_file_name),'GREEN')
+                      log_file_path = element_path 
+                      _log_check(log_file_path)
         print('[complete print]')
 
 
