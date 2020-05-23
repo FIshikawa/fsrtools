@@ -134,12 +134,12 @@ def time_log_print(directory_path,n_indent=1):
                 sentence = '[{0}] : [start {1}] : [past {2}] : ' \
                                .format(directory_name,start_time,duration_time)
                 sentence += '[ongoing  number-{0} ({0}/{1})]'\
-                            .format(ongoing_number,len(total_combinations))
+                         .format(ongoing_number,max(len(total_combinations),1))
             else:
                 sentence = '[{0}] : [start {1}] : [end {2}] : [duration {3}]'\
                       .format(directory_name,start_time,end_time,duration_time)
                 sentence += ' : [completed ({0}/{1})]'\
-                            .format(ongoing_number,len(total_combinations))
+                         .format(ongoing_number,max(len(total_combinations),1))
             log_write(sentence)
 
             sentence = '  [command_name : {0}] ' \
