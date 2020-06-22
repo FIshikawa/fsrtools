@@ -202,7 +202,7 @@ class SimulationManager:
                 simulate_params = \
                 set_simulate_params(simulate_params_original, 
                                     total_combinations[i],
-                                    logger)
+                                    self.logger)
             else:
                 simulate_params = simulate_params_original 
             self.logger('[simulation : number-{}]'.format(simulate_number))

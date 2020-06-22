@@ -1193,12 +1193,19 @@ def set_data_map(top_directory):
                         else:
                             config_data_map[-1]['common_parameters'][key] = value
 
-        if(not included_directory or 'number' in os.path.basename(current_directory)):
+        if not included_directory or 'number' in \
+                                          os.path.basename(current_directory):
             result_files = []
             json_data = None
             for key in files:
                 if('parameter.json' in key):
-                    json_data = json.load(open(os.path.join(current_directory,key),'r'))
+                    try:
+                        json_file = os.path.join(current_directory,key)
+                        json_data = json.load(open(json_file,'r'))
+                    except json.JSONDecodeError as err:
+                        print('Json in current directory has problems')
+                        print('current directory : {}'.format(current_directory))
+                        raise err
                 if('result' in key):
                     result_files.append(key)
             result_data_map.append({})
