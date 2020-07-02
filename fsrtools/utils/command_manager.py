@@ -19,12 +19,10 @@ class CommandManager:
     def __init__(self):
         self._json_path = _commands_json_file()
         if os.path.exists(self._json_path):
-            print('[saved commands exists]')
             commands_json = open(self._json_path)
             self.command_data = json.load(commands_json)
             self.command_name_list = list(self.command_data.keys())
         else:
-            print('[No saved commands]')
             self.command_data = {}
             self.command_name_list= []
 
