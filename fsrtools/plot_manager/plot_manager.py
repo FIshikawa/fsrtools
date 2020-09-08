@@ -1184,7 +1184,9 @@ def set_data_map(top_directory):
 
     top_depth = len([x for x in top_directory.split('/') if(len(x) > 0)])
 
+    counter = 0
     for current_directory, included_directory, files in os.walk(top_directory):
+        counter += 1
         current_dir_list = current_directory.split('/') 
         indent = len(current_dir_list)
 
@@ -1209,8 +1211,8 @@ def set_data_map(top_directory):
                         else:
                             config_data_map[-1]['common_parameters'][key] = value
 
-        if not included_directory or 'number' in \
-                                          os.path.basename(current_directory):
+        if (not included_directory and counter == 1) or \
+                             'number' in os.path.basename(current_directory):
             result_files = []
             json_data = None
             for key in files:
