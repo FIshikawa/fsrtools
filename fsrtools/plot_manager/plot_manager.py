@@ -35,18 +35,21 @@ class PlotManager:
 
         if(top_directory):
             self._top_directory = os.path.normpath(top_directory)
-            self._config_data_map, self._result_data_map  = set_data_map(top_directory)
+            self._config_data_map, self._result_data_map  = \
+                                                    set_data_map(top_directory)
         if(file):
             top_directory = self._directory_name_set(file_path=file)
             self._top_directory = os.path.normpath(top_directory)
             file_in_dir_name = os.path.dirname(file)
-            self._config_data_map, self._result_data_map  = set_data_map(top_directory)
+            self._config_data_map, self._result_data_map = \
+                                                    set_data_map(top_directory)
 
     def result_info(self,whole_info=False):
         if(whole_info):
             print('[result whole info]')
             top_depth = len(os.path.normpath(self._top_directory).split('/'))
-            for current_directory, included_directory, files in os.walk(self._top_directory):
+            for current_directory, included_directory, files \
+                                               in os.walk(self._top_directory):
                 self._myprint.reset_indent()
                 indent_length = len(current_directory.split('/'))
                 self._myprint.add_indent(indent_length - top_depth)
@@ -61,7 +64,9 @@ class PlotManager:
             counter = 0
             if(self._config_data_map):
                 for i, element in enumerate(self._config_data_map):
-                    log_write(colors('GREEN') + '[experiment date : {}]'.format(element['common_directory']) + colors('END'))
+                    log_write(colors('GREEN') + '[experiment date : {}]'
+                        .format(element['common_directory']) + colors('END'))
+
                     log_write.add_indent()
                     if(element['variable_parameters']):
                         log_write('[common parameters] : ',end='')
@@ -73,18 +78,23 @@ class PlotManager:
                             if(result_data['common_parameter_number'] == i):
                                 counter += 1
                                 log_write('[{}] '.format(counter),end='')
-                                for key, value in result_data['variable_parameters'].items():
-                                    log_write('{0} : {1} '.format(key,value),end='') 
+                                variable_parameters = \
+                                        result_data['variable_parameters']
+                                for key, value in variable_parameters.items():
+                                    log_write('{0} : {1} '
+                                                .format(key,value),end='') 
                                 log_write('')
                                 log_write.add_indent()
-                                log_write('[files] : {}'.format(result_data['files']))
+                                log_write('[files] : {}'
+                                           .format(result_data['files']))
                                 log_write.decrease_indent()
                         log_write.decrease_indent()
                     log_write.decrease_indent()
                 log_write.decrease_indent()
             else:
                 for i, element in enumerate(self._result_data_map):
-                    log_write('[{0}][directory] : {1}'.format(i+1,element['directory']))
+                    log_write('[{0}][directory] : {1}'
+                               .format(i+1,element['directory']))
                     log_write.add_indent()
                     log_write('[files] : {} '.format(element['files']))
                     log_write.decrease_indent()
@@ -96,7 +106,8 @@ class PlotManager:
             print('  [self.ax]')
             for key in self.ax.keys():
                 for key_t in self.ax[key].keys():
-                    print('    [{0} : {1}]  {2}'.format(key, key_t, self.ax[key][key_t]))
+                    print('    [{0} : {1}]  {2}'
+                          .format(key, key_t, self.ax[key][key_t]))
         else:
             print('  [ax has no elements yet]')
         if(self.fig):
@@ -138,7 +149,8 @@ class PlotManager:
         result_data_map_total = {}
         for i, result_data in enumerate(self._result_data_map):
             result_data_map_total[i+1] = result_data
-            result_data_map_total[i+1]['common_parameters'] = copy.deepcopy(self._config_data_map[result_data['common_parameter_number']]['common_parameters'])
+            result_data_map_total[i+1]['common_parameters'] = \
+                    copy.deepcopy(self._config_data_map[result_data['common_parameter_number']]['common_parameters'])
         return result_data_map_total
 
     def result_data_map_all(self):
@@ -1181,11 +1193,15 @@ def set_data_map(top_directory):
             if(os.path.exists(json_path)):
                 json_data = json.load(open(json_path,'r'))
                 config_data_map.append({})
-                config_data_map[-1]['common_directory'] = os.path.dirname(current_directory)
+                config_data_map[-1]['common_directory'] = \
+                                            os.path.dirname(current_directory)
                 config_data_map[-1]['variable_parameters'] = []
-                config_data_map[-1]['common_parameters'] = {'command_name':json_data['experiment_params']['command_name']}
-                print_temp = lambda sentence : sentence
-                simulate_params, total_combinations = set_total_combinations(json_data['simulate_params'],print_temp)
+                command_name = json_data['experiment_params']['command_name']
+                config_data_map[-1]['common_parameters'] = \
+                                                {'command_name':command_name}
+                print_t = lambda sentence : sentence
+                simulate_params, total_combinations = \
+                   set_total_combinations(json_data['simulate_params'],print_t)
                 for key, value in simulate_params.items():
                     if(not 'dir' in key and not 'time_info' in key):
                         if(isinstance(value, list) or isinstance(value,str)):
