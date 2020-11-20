@@ -43,6 +43,8 @@ def log_check(target):
                       log_file_path = element_path 
                       _log_check(log_file_path)
         print('[complete print]')
+    else:
+        raise NameError('No such a directory or file ; {}'.format(target))
 
 
 def _log_check(log_file_path):
