@@ -470,7 +470,7 @@ class PlotManager:
 
         data_raw = np.loadtxt(file_path, dtype=np.float64,skiprows=1)
         if len(data_raw.shape) < 2:
-            data_raw = data_raw.reshape(1,-1)
+            data_raw = data_raw.reshape(-1,1)
         data_file = open(file_path,'r')
 
         if(plot_type == 'normal'):
