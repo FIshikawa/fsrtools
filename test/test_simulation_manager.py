@@ -2,8 +2,11 @@ import pytest
 import json
 import shutil
 import os
-from fsrtools.simulation_tools._manager_utils import *
-from fsrtools.utils.set_total_combinations import *
+from fsrtools.simulation_tools._manager_utils import set_execute_command
+from fsrtools.simulation_tools._manager_utils import set_simulate_params
+from fsrtools.simulation_tools._manager_utils import integer_filter
+from fsrtools.utils.set_total_combinations import product_combination_generator
+from fsrtools.utils.set_total_combinations import set_total_combinations
 from fsrtools.simulation_tools import SimulationManager
 from test_command_manager import CommandManagerTest
 
@@ -48,7 +51,8 @@ def test_product_combination_generator_case_2():
 def test_set_simulate_params_iterate_dict_case_1():
     simulate_params = {'Ns':2,"N_time":'Ns*2'}
     print_temp = lambda sentence : print(sentence)
-    simulate_params, total_combination = set_total_combinations(simulate_params,print_temp)
+    simulate_params, total_combination = \
+            set_total_combinations(simulate_params,print_temp)
     assert simulate_params['N_time'] == 4
     assert len(total_combination) == 0
 
@@ -56,7 +60,8 @@ def test_set_simulate_params_iterate_dict_case_1():
 def test_set_simulate_params_iterate_dict_case_2():
     simulate_params = {'Nm':[1,2],'Ns':[2,3],'N_time':'Ns*Nm'}
     print_temp = lambda sentence : print(sentence)
-    simulate_params, total_combination = set_total_combinations(simulate_params,print_temp)
+    simulate_params, total_combination = \
+            set_total_combinations(simulate_params,print_temp)
     answer_dict = [{} for x in range(4)]
     counter = 0
     for value in simulate_params['Nm']:
@@ -71,11 +76,14 @@ def test_set_simulate_params_iterate_dict_case_2():
 def test_set_simulate_params():
     simulate_params = {'Nm':[1,2],'Ns':2,'N_time':'Ns*Nm'}
     print_temp = lambda sentence : print(sentence)
-    simulate_params_original, total_combination = set_total_combinations(simulate_params,print_temp)
+    simulate_params_original, total_combination = \
+            set_total_combinations(simulate_params,print_temp)
     for i, pair in enumerate(total_combination):
-        simulate_params_temp = set_simulate_params(simulate_params_original,pair)
+        simulate_params_temp = \
+                set_simulate_params(simulate_params_original,pair,print_temp)
         print(simulate_params_temp)
-        assert simulate_params_temp['N_time'] == simulate_params['Nm'][i] * simulate_params['Ns']
+        assert simulate_params_temp['N_time'] == \
+                simulate_params['Nm'][i] * simulate_params['Ns']
 
 
 @pytest.fixture(scope='module')
@@ -84,7 +92,8 @@ def set_data_for_test():
     command_manager = CommandManagerTest()
     if('hello_world' in command_manager.command_name_list):
         command_manager.remove_command('hello_world')
-    command_manager.add_command({'hello_world' : ['python','./test/hello_world.py','N_loop']})
+    command_manager.add_command({'hello_world' : \
+                                 ['python','./test/hello_world.py','N_loop']})
     command_manager.save()
     pytest.log_file = 'test/log.dat'
     pytest.parameter_json = 'test/parameter_test.json'
