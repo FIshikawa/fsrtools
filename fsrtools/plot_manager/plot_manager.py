@@ -228,14 +228,18 @@ class PlotManager:
             type_dict =copy.deepcopy(self._buffer_data[file_path]['type_dict'])
             plot_type =copy.deepcopy(self._buffer_data[file_path]['plot_type'])
         if(not silent):
+            self._myprint('[file path] : {}'.format(file_path))
+            self._myprint.add_indent()
             self._myprint('[data type list]')
             self._myprint.add_indent()
             if type_dict is None:
-                self._myprint('No data : {}'.format(file_path))
+                self._myprint('Caution!! : No data. '\
+                        'The simulations are not performed')
             else:
                 for key in type_dict.keys():
                     self._myprint('[{0}] : {1}'.format(key,type_dict[key]))
             self._myprint.decrease_indent()
+        self._myprint.decrease_indent()
         return data, type_dict, plot_type
 
     def time_result(self):
@@ -482,8 +486,6 @@ class PlotManager:
             return json_data
 
     def _data_load(self,file_path,plot_type=None,silent=False):
-        type_dict = {}
-        data = {}
         myprint_temp = copy.deepcopy(self._myprint)
         if(silent):
             self._myprint = LogManager(silent=silent)
@@ -504,14 +506,17 @@ class PlotManager:
                 plot_type = 'normal'
 
         data_raw = np.loadtxt(file_path, dtype=np.float64,skiprows=1)
-        if 0 < len(data_raw.shape) < 2:
+        no_data_flag = False 
+        if len(data_raw.shape) == 1:
             data_raw = data_raw.reshape(-1,1)
+        if len(data_raw) < 1:
+            no_data_flag = True
         data_file = open(file_path,'r')
 
-        data = type_dict = plot_type = None
-        if len(data_raw.shape) < 1:
-            self._myprint('There are no data in {}'.format(file_name))
-        else:
+        data = type_dict = None
+        if not no_data_flag:
+            type_dict = {}
+            data = {}
             if(plot_type == 'normal'):
                 type_dict = {'ACF_list' : [],
                              'With_error_list' : [],
