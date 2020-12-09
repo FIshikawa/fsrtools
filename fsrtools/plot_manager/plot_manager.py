@@ -230,8 +230,11 @@ class PlotManager:
         if(not silent):
             self._myprint('[data type list]')
             self._myprint.add_indent()
-            for key in type_dict.keys():
-                self._myprint('[{0}] : {1}'.format(key,type_dict[key]))
+            if type_dict is None:
+                self._myprint('No data : {}'.format(file_path))
+            else:
+                for key in type_dict.keys():
+                    self._myprint('[{0}] : {1}'.format(key,type_dict[key]))
             self._myprint.decrease_indent()
         return data, type_dict, plot_type
 
@@ -322,7 +325,8 @@ class PlotManager:
                 if('result' in key):
                     result_files.append(key)
             if(not result_files):
-                raise ValueError('result directory "{}" have no results'.format(directory_name))
+                raise ValueError('result directory "{}" '\
+                        'have no results'.format(directory_name))
             self._myprint.add_indent()
             self._myprint('[plot "result" files s.t]')
             self._myprint('  {}'.format(result_files))
@@ -330,9 +334,15 @@ class PlotManager:
             self._myprint.add_indent()
             self._myprint('[start ploting]')
             for key in result_files:
-                self._plot_file(os.path.join(directory_name,key),directory,json_data,plot_type=plot_type,log_scale=log_scale,N_plot=N_plot)
+                self._plot_file(os.path.join(directory_name,key),
+                                directory,
+                                json_data,
+                                plot_type=plot_type,
+                                log_scale=log_scale,
+                                N_plot=N_plot)
                 if(save_fig):
-                    fig_name = os.path.join(directory_name, key.split('.')[0] + '.pdf')
+                    fig_name = os.path.join(directory_name, 
+                                            key.split('.')[0] + '.pdf')
                     self._myprint('[save figure : {}]'.format(fig_name))
                     plt.savefig(fig_name,format='pdf')
         else:
@@ -341,11 +351,15 @@ class PlotManager:
         self._myprint('[plot completed]')
         self._myprint = LogManager(cout_tag=True)
 
-    def plot_data(self,data=None,data_x=None,data_y=None,data_z=None,y_error=None,ptype=None,x_axis=None,y_axis=None,z_axis=None,label=None,title=None,addplot=None,x_lim=None,y_lim=None,marker=None):
+    def plot_data(self,data=None,data_x=None,data_y=None,data_z=None,
+                       y_error=None,ptype=None,x_axis=None,y_axis=None,
+                       z_axis=None,label=None,title=None,addplot=None,
+                       x_lim=None,y_lim=None,marker=None):
         if(addplot is not None and isinstance(addplot,list)):
             plot_type = addplot[0]
             value_name = addplot[1]
-            if(not plot_type in self.fig.keys() or not value_name in self.ax[plot_type].keys()):
+            if(not plot_type in self.fig.keys() or \
+                    not value_name in self.ax[plot_type].keys()):
                 raise NameError('target result does not exist')
         else:
             plot_type= 'temporary'
@@ -356,34 +370,54 @@ class PlotManager:
         data_list.extend([data_x,data_y,data_z,y_error])
         axis_list.extend([x_axis,y_axis,z_axis])
         if(ptype == '2d'):
-            if(not plot_type in self.fig.keys() or not value_name in self.ax[plot_type].keys()):
+            if(not plot_type in self.fig.keys() or\
+                    not value_name in self.ax[plot_type].keys()):
                 self.ax[plot_type] = {}
-                self.fig[plot_type], self.ax[plot_type][value_name] = plt.subplots(figsize=(self.basic_size['window_small']*1.618,self.basic_size['window_small']))
-                self._myprint('[Remark : fig and ax key of plot_data is "temporary"]')
-                self._myprint('[You can overlay some graph on same window which is identified by the key "temporary"]')
+                self.fig[plot_type], self.ax[plot_type][value_name] = \
+                        plt.subplots(
+                            figsize=(self.basic_size['window_small']*1.618,
+                                     self.basic_size['window_small'])
+                                    )
+                self._myprint('[Remark : fig and ax key of '\
+                                            'plot_data is "temporary"]')
+                self._myprint('[You can overlay some graph ''on same window '\
+                                'which is identified by the key "temporary"]')
         else:
-            if((len([x for x in axis_list if x != None]) + (1 if title != None else 0)) < 1 and len([x for x in data_list if x != None]) > 0): 
+            num_not_none_axis = (len([x for x in axis_list if x != None]) \
+                               + (1 if title != None else 0))
+            num_not_non_data = len([x for x in data_list if x != None])
+            if( num_not_none_x < 1 and  num_not_non_data > 0): 
                 raise KeyError('ptype must be chosen from "2d" or "3d"')
         if(data is None and ptype is not None):
-            self._plot_2d(self.ax[plot_type][value_name],data_x,data_y,y_error=y_error,label=label,marker=marker)
+            self._plot_2d(self.ax[plot_type][value_name],
+                          data_x,data_y,
+                          y_error=y_error,
+                          label=label,marker=marker)
         elif(isinstance(data,dict) and ptype is not None):
             for i in range(4):
                 if(data_list[i] is not None):
                     if(not isinstance(data_list[i],str)):
-                        self._myprint('[Error! : data_xyz, y_error shold be str]') 
+                        self._myprint('[Error! : data_xyz, y_error '\
+                                                        'shold be str]') 
                         sys.exit()
                     else:
                         if(data_list[i] in data.keys()):
                             data_dict[i] = data[data_list[i]]
                         else:
-                            raise KeyError('{} is not in data'.format(data_list[i])) 
+                            raise KeyError('{} is not in data'\
+                                                    .format(data_list[i])) 
                 else:
                     data_dict[i] = None
             if(axis_list[0] is None):
                 self.ax[plot_type][value_name].set_xlabel(data_list[0])
             if(axis_list[1] is None):
                 self.ax[plot_type][value_name].set_ylabel(data_list[1])
-            self._plot_2d(self.ax[plot_type][value_name],data_dict[0],data_dict[1],y_error=data_dict[3],label=label,marker=marker)
+            self._plot_2d(self.ax[plot_type][value_name],
+                          data_dict[0],
+                          data_dict[1],
+                          y_error=data_dict[3],
+                          label=label,
+                          marker=marker)
         if(isinstance(x_lim,dict)):
             self.ax[plot_type][value_name].set_xlim(left=x_lim[0],right=x_lim[1])
         if(isinstance(y_lim,dict)):
@@ -463,112 +497,123 @@ class PlotManager:
             for key in self._plot_type_list:
                 if(key in file_path):
                     plot_type = key
-                    self._myprint('[set plot_type {} : {} in the result file name]'.format(plot_type,plot_type))
+                    self._myprint('[set plot_type {} : {} '\
+                        'in the result file name]'.format(plot_type,plot_type))
             if(plot_type is None):
                 self._myprint('[normal plot data]')
                 plot_type = 'normal'
 
         data_raw = np.loadtxt(file_path, dtype=np.float64,skiprows=1)
-        if len(data_raw.shape) < 2:
+        if 0 < len(data_raw.shape) < 2:
             data_raw = data_raw.reshape(-1,1)
         data_file = open(file_path,'r')
 
-        if(plot_type == 'normal'):
-            type_dict = {'ACF_list' : [],
-                         'With_error_list' : [],
-                         'Energy_list' : [],
-                         'Rest_list' : [],
-                         'Exact_list' : [],
-                         'x_axis' : ''}
-            value_keys = data_file.readline()
-            value_keys = value_keys.strip().split(' ')
-            value_keys.pop(0)
-            data[value_keys[0]] = data_raw[:,0]
-            type_dict['x_axis'] = value_keys[0]
-            for key in value_keys[1:]:
-                data[key] = data_raw[:,value_keys.index(key)]
-                if('exact' in key):
-                    type_dict['Exact_list'].append(key)
-                elif('ACF' in key):
-                    if(not 'fourier' in key and not 'error' in key):
-                        type_dict['ACF_list'].append(key)
-                elif(not 'error' in key):
-                    if('Energy' in key):
-                        if('error_' + key in value_keys):
-                            type_dict['Energy_list'].append(key)
+        data = type_dict = plot_type = None
+        if len(data_raw.shape) < 1:
+            self._myprint('There are no data in {}'.format(file_name))
+        else:
+            if(plot_type == 'normal'):
+                type_dict = {'ACF_list' : [],
+                             'With_error_list' : [],
+                             'Energy_list' : [],
+                             'Rest_list' : [],
+                             'Exact_list' : [],
+                             'x_axis' : ''}
+                value_keys = data_file.readline()
+                value_keys = value_keys.strip().split(' ')
+                value_keys.pop(0)
+                data[value_keys[0]] = data_raw[:,0]
+                type_dict['x_axis'] = value_keys[0]
+                for key in value_keys[1:]:
+                    data[key] = data_raw[:,value_keys.index(key)]
+                    if('exact' in key):
+                        type_dict['Exact_list'].append(key)
+                    elif('ACF' in key):
+                        if(not 'fourier' in key and not 'error' in key):
+                            type_dict['ACF_list'].append(key)
+                    elif(not 'error' in key):
+                        if('Energy' in key):
+                            if('error_' + key in value_keys):
+                                type_dict['Energy_list'].append(key)
+                                type_dict['With_error_list'].append(key)
+                            else:
+                                type_dict['Rest_list'].append(key)
+                        elif('error_' + key in value_keys):
                             type_dict['With_error_list'].append(key)
                         else:
                             type_dict['Rest_list'].append(key)
-                    elif('error_' + key in value_keys):
-                        type_dict['With_error_list'].append(key)
-                    else:
-                        type_dict['Rest_list'].append(key)
 
-        elif(plot_type in ['hist','correlation','3d']):
-            x_data = data_file.readline()
-            x_data = x_data.strip()
-            x_data = x_data.split(' ')
-            x_data.pop(0)
-            data[x_data[0]] = np.zeros(len(x_data[1:]))
-            for i in range(len(x_data[1:])):
-                data[x_data[0]][i] = x_data[1+i]
-            value_keys = data_file.readline()
-            value_keys = value_keys.strip()
-            value_keys = value_keys.split(' ')
-            value_keys.pop(0)
+            elif(plot_type in ['hist','correlation','3d']):
+                x_data = data_file.readline()
+                x_data = x_data.strip()
+                x_data = x_data.split(' ')
+                x_data.pop(0)
+                data[x_data[0]] = np.zeros(len(x_data[1:]))
+                for i in range(len(x_data[1:])):
+                    data[x_data[0]][i] = x_data[1+i]
+                value_keys = data_file.readline()
+                value_keys = value_keys.strip()
+                value_keys = value_keys.split(' ')
+                value_keys.pop(0)
 
-            if(plot_type == 'hist'):
-                type_dict = { 'y_axis' : '',
-                              'values' : [],
-                              '3d_plot':[],
-                              '2d_plot':[]}
-                type_dict['y_axis'] = x_data[0]
-                type_dict['values'].append(value_keys[0].split('_')[-1])
-                for key in value_keys:
-                    key_t = key.split('_')[-1]
-                    if(not key_t in type_dict['values']):
-                        type_dict['values'].append(key_t)
-                for key in type_dict['values']:
-                    type_dict['3d_plot'].append(key + '_3d_plot')
-                    type_dict['2d_plot'].append(key + '_2d_plot_head')
-                    type_dict['2d_plot'].append(key + '_2d_plot_tail')
-                    type_dict['2d_plot'].append(key + '_2d_plot')
-                    data[key] = {}
-                    data[key]['range'] = data_raw[:,[x for x in range(len(value_keys)) if 'range' in value_keys[x] and key in value_keys[x]]]
-                    data[key]['hist'] = data_raw[:,[x for x in range(len(value_keys)) if 'hist' in value_keys[x] and key in value_keys[x]]]
+                if(plot_type == 'hist'):
+                    type_dict = { 'y_axis' : '',
+                                  'values' : [],
+                                  '3d_plot':[],
+                                  '2d_plot':[]}
+                    type_dict['y_axis'] = x_data[0]
+                    type_dict['values'].append(value_keys[0].split('_')[-1])
+                    for key in value_keys:
+                        key_t = key.split('_')[-1]
+                        if(not key_t in type_dict['values']):
+                            type_dict['values'].append(key_t)
+                    for key in type_dict['values']:
+                        type_dict['3d_plot'].append(key + '_3d_plot')
+                        type_dict['2d_plot'].append(key + '_2d_plot_head')
+                        type_dict['2d_plot'].append(key + '_2d_plot_tail')
+                        type_dict['2d_plot'].append(key + '_2d_plot')
+                        data[key] = {}
+                        range_index = [x for x in range(len(value_keys)) \
+                                if 'range' in value_keys[x] and key in value_keys[x]] 
+                        data[key]['range'] = data_raw[:,range_index]
+                        hist_index = [x for x in range(len(value_keys)) \
+                                if 'hist' in value_keys[x] and key in value_keys[x]]
+                        data[key]['hist'] = data_raw[:,hist_index]
 
-            elif(plot_type in ['correlation','3d']):
-                type_dict = { 'y_axis' : '',
-                              'x_axis' : '',
-                              'values' : [],
-                              '3d_plot':[],
-                              '2d_plot':[]}
-                type_dict['y_axis'] = x_data[0]
-                type_dict['x_axis'] = value_keys[0]
+                elif(plot_type in ['correlation','3d']):
+                    type_dict = { 'y_axis' : '',
+                                  'x_axis' : '',
+                                  'values' : [],
+                                  '3d_plot':[],
+                                  '2d_plot':[]}
+                    type_dict['y_axis'] = x_data[0]
+                    type_dict['x_axis'] = value_keys[0]
+                    data[value_keys[0]] = data_raw[:,0]
+                    type_dict['values'].append(value_keys[1])
+                    for key_t in value_keys[1:]:
+                        if(not key_t in type_dict['values']):
+                            type_dict['values'].append(key_t)
+                    for key in type_dict['values']:
+                        type_dict['3d_plot'].append(key + '_3d_plot')
+                        type_dict['2d_plot'].append(key + '_2d_plot')
+                        values_index = [x for x in range(len(value_keys)) if key == value_keys[x]]
+                        data[key] = data_raw[:,values_index]
+                else:
+                    raise KeyError('input plot_type is not expeceted')
+
+            elif(plot_type == 'totally'):
+                type_dict = {'y_list' : [],
+                             'x_axis' : ''}
+                value_keys = data_file.readline()
+                value_keys = value_keys.strip()
+                value_keys = value_keys.split(' ')
+                value_keys.pop(0)
                 data[value_keys[0]] = data_raw[:,0]
-                type_dict['values'].append(value_keys[1])
-                for key_t in value_keys[1:]:
-                    if(not key_t in type_dict['values']):
-                        type_dict['values'].append(key_t)
-                for key in type_dict['values']:
-                    type_dict['3d_plot'].append(key + '_3d_plot')
-                    type_dict['2d_plot'].append(key + '_2d_plot')
-                    data[key] = data_raw[:,[x for x in range(len(value_keys)) if key == value_keys[x]]]
-            else:
-                raise KeyError('input plot_type is not expeceted')
+                type_dict['x_axis'] = value_keys[0]
+                for key in value_keys[1:]:
+                    data[key] = data_raw[:,value_keys.index(key)]
+                    type_dict['y_list'].append(key)
 
-        elif(plot_type == 'totally'):
-            type_dict = {'y_list' : [],
-                         'x_axis' : ''}
-            value_keys = data_file.readline()
-            value_keys = value_keys.strip()
-            value_keys = value_keys.split(' ')
-            value_keys.pop(0)
-            data[value_keys[0]] = data_raw[:,0]
-            type_dict['x_axis'] = value_keys[0]
-            for key in value_keys[1:]:
-                data[key] = data_raw[:,value_keys.index(key)]
-                type_dict['y_list'].append(key)
         self._myprint = myprint_temp
         return data, type_dict, plot_type
 
